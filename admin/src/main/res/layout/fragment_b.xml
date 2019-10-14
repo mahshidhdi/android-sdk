@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This is "Fragment B"-->
+<android.support.constraint.ConstraintLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/blue_800">
+
+    <TextView
+        android:id="@+id/tvFragment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="(FragmentB)"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvSample"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:text="fragment: sample TextView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvFragment" />
+
+    <EditText
+        android:id="@+id/editTextSample"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:inputType="text"
+        android:textSize="12sp"
+        android:text="fragment: sample EditText"
+        android:textAlignment="center"
+        app:layout_constraintEnd_toStartOf="@id/buttonInnerTarget"
+        app:layout_constraintStart_toEndOf="@id/buttonInnerTarget2"
+        app:layout_constraintTop_toBottomOf="@+id/tvSample"/>
+
+    <android.support.v7.widget.AppCompatButton
+        android:id="@+id/buttonInnerTarget"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="16dp"
+        android:text="Target"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvSample"
+        android:backgroundTint="@color/colorAccent"
+        android:textColor="@android:color/white"/>
+
+    <android.support.v7.widget.AppCompatButton
+        android:id="@+id/buttonInnerTarget2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:text="Target2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvSample"
+        android:backgroundTint="@color/colorAccent"
+        android:textColor="@android:color/white"/>
+
+
+
+
+</android.support.constraint.ConstraintLayout>

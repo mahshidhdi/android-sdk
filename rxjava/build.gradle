@@ -1,0 +1,71 @@
+apply plugin: 'java-library'
+/**
+ *  In order to test sdk with the real RxJava,
+ *  comment jar api line and uncomment real api
+ *  Remember: Don't commit this change.
+ */
+dependencies {
+    api fileTree(dir: 'libs', include: ['*.jar'])
+//    api "io.reactivex.rxjava2:rxjava:$versions.rxJava"
+}
+
+sourceCompatibility = "7"
+targetCompatibility = "7"
+
+
+ext {
+    artifact = "rxjava"
+    bintrayName = 'pushe-rxjava'
+    libraryName = "PusheRxJava"
+    libraryDescription = "Minified RxJava library used in Pushe modules"
+}
+
+
+apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'maven-publish'
+
+shadowJar {
+    classifier = null
+}
+
+//shadowJar {
+//    baseName = 'rxjava'
+//    classifier = null
+//    version = null
+//}
+
+publishing {
+    publications {
+        shadow(MavenPublication) { publication ->
+            project.shadow.component(publication)
+            groupId publishedGroupId
+            artifactId artifact
+            version release.versionName
+
+            pom {
+                name = libraryName
+                description = libraryDescription
+                url = siteUrl
+                licenses {
+                    license {
+                        name = licenseName
+                        url = licenseUrl
+                    }
+                }
+                scm {
+                    connection = gitUrl
+                    developerConnection = gitUrl
+                    url = siteUrl
+                }
+            }
+        }
+    }
+}
+
+ext {
+    bintrayConfigurations = []
+    bintrayPublications = ["shadow"]
+}
+
+apply from : "$rootProject.projectDir/bintray.gradle"

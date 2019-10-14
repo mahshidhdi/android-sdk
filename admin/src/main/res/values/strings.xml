@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Pushe Admin</string>
+    <string name="title_activity_archive_list">ArchiveListActivity</string>
+    <string name="action_settings">Settings</string>
+    <string name="clear_logs">Clear Logs</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="filter">Filter</string>
+    <string name="title_activity_nav_drawer">NavDrawer</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Pushe Admin</string>
+    <string name="nav_header_subtitle"></string>
+    <string name="nav_header_desc">Navigation header</string>
+</resources>

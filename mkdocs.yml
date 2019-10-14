@@ -1,0 +1,61 @@
+site_name: Pushe Internal Docs
+theme:
+  name: 'material'
+  logo:
+    icon: 'android'
+  font:
+    text: 'Ubuntu'
+    code: 'Ubuntu Mono'
+  palette:
+    primary: 'indigo'
+    accent: 'indigo'
+  feature:
+    tabs: true
+markdown_extensions:
+  - admonition
+  - codehilite:
+      guess_lang: false
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+  - pymdownx.inlinehilite
+  - pymdownx.magiclink
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  
+extra_css:
+  - 'stylesheets/extra.css'
+
+pages:
+  - Documentation Status: doc-status.md
+  - Code Style: code-style.md
+  - Git: git.md
+  - Versioning: versioning.md
+  - Config: config.md
+  - Development Guide:
+    - Project Structure: guide/structure.md
+    - Initialization: guide/initialization.md
+    - Dependency Injection: guide/dependency-injection.md
+    - Sending Messages: guide/sending-message.md
+    - Receiving Messages: guide/receiving-message.md
+    - Threads: guide/threads.md
+    - Running Tasks: guide/tasks.md
+    - Providing APIs for Developers: guide/pushe-api.md
+    - Logging: guide/logging.md
+  - Core Module:
+    - Index: core/index.md
+  - Notification Module:
+    - Index: notification/index.md
+  - Analytics Module:
+    - Index: analytics/index.md

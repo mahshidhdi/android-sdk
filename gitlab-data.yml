@@ -1,0 +1,22 @@
+---
+modules: [ 
+	{name: core}, 
+	{name: datalytics},
+	{name: notification},
+	{name: sentry},
+	{name: analytics},
+	{name: admin},
+	{name: logcollection}
+]
+
+admin-dependencies: [ 
+	{module: core}, 
+	{module: datalytics},
+	{module: notification},
+	{module: sentry},
+	{module: analytics},
+	{module: utils},
+	{module: logcollection}
+]
+---
+

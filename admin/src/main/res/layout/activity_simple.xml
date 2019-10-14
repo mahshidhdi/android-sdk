@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/blue_100"
+    tools:context=".analytics.activities.SimpleActivity">
+
+    <TextView
+        android:id="@+id/tvActivity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ACTIVITY1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+
+    <TextView
+        android:id="@+id/tvSample"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:text="activity1: This is a sample TextView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvActivity" />
+
+    <TextView
+        android:id="@+id/tvSample2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:text="activity1: This is another sample TextView"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/switchSample" />
+
+    <EditText
+        android:id="@+id/editTextSample"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:inputType="text"
+        android:text="activity1: This is a sample EditText"
+        android:textAlignment="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvSample2" />
+
+    <android.support.v7.widget.AppCompatButton
+        android:id="@+id/buttonSample"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="16dp"
+        android:text="next"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editTextSample"
+        android:backgroundTint="@color/colorAccent"
+        android:textColor="@android:color/white"/>
+
+
+    <android.support.v7.widget.AppCompatButton
+        android:id="@+id/buttonSample2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:text="previous"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editTextSample"
+        android:backgroundTint="@color/colorAccent"
+        android:textColor="@android:color/white"/>
+
+
+    <Button
+        android:id="@+id/buttonTarget"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="target"
+        app:layout_constraintEnd_toStartOf="@id/buttonSample"
+        app:layout_constraintStart_toEndOf="@id/buttonSample2"
+        app:layout_constraintTop_toBottomOf="@+id/editTextSample"
+        android:backgroundTint="@color/colorAccent"
+        android:textColor="@android:color/white"/>
+
+    <Button
+        android:id="@+id/buttonTarget2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="target2"
+        app:layout_constraintEnd_toStartOf="@id/buttonSample"
+        app:layout_constraintStart_toEndOf="@id/buttonSample2"
+        app:layout_constraintTop_toBottomOf="@+id/buttonTarget"
+        android:backgroundTint="@color/colorAccent"
+        android:textColor="@android:color/white"/>
+
+    <Button
+        android:id="@+id/buttonHome"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Home"
+        app:layout_constraintEnd_toStartOf="@id/buttonSample"
+        app:layout_constraintStart_toEndOf="@id/buttonSample2"
+        app:layout_constraintTop_toBottomOf="@+id/buttonTarget2"
+        android:backgroundTint="@color/colorAccent"
+        android:textColor="@android:color/white"/>
+
+
+
+    <Switch
+        android:id="@+id/switchSample"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="activity1: this is a sample Switch"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvSample"
+        tools:checked="true" />
+
+</android.support.constraint.ConstraintLayout>

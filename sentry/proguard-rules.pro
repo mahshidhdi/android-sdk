@@ -1,0 +1,6 @@
+-keepattributes LineNumberTable,SourceFile
+-dontwarn org.slf4j.**
+-dontwarn javax.naming.**
+-dontwarn javax.servlet.**
+-keep class io.sentry.event.Event { *; }
+-keep class org.slf4j.** { *; }

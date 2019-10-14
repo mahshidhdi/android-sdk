@@ -1,0 +1,5 @@
+-keep class co.pushe.plus.notification.PusheNotification { *; }
+-keep class co.pushe.plus.notification.UserNotification { *; }
+-keep public interface co.pushe.plus.notification.PusheNotificationListener { *; }
+-keep class co.pushe.plus.notification.NotificationData { *; }
+-keep class co.pushe.plus.notification.NotificationButtonData { *; }

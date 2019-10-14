@@ -1,0 +1,72 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdkVersion setup.compileSdk
+
+
+    defaultConfig {
+        minSdkVersion setup.minSdk
+        targetSdkVersion setup.targetSdk
+        versionCode release.versionCode
+        versionName release.versionName
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),  proguard.common, 'proguard-rules.pro'
+            consumerProguardFiles proguard.consumerCommon, 'proguard-consumer-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+
+    // Dagger
+    kapt "com.google.dagger:dagger-compiler:${versions.dagger}"
+    implementation "com.google.dagger:dagger:${versions.dagger}"
+
+    implementation project(':rxjava')
+    implementation project(':core')
+    implementation project(':utils')
+
+    // Moshi
+    implementation "com.squareup.moshi:moshi:${versions.moshi}"
+    kapt "com.squareup.moshi:moshi-kotlin-codegen:${versions.moshi}"
+
+    // retrofit
+    implementation 'com.squareup.retrofit2:retrofit:2.5.0'
+    implementation 'com.squareup.retrofit2:converter-moshi:2.5.0'
+    implementation('com.squareup.retrofit2:adapter-rxjava2:2.5.0') { exclude group: 'io.reactivex.rxjava2', module: 'rxjava' }
+
+    // WorkManager
+    implementation "android.arch.work:work-runtime-ktx:${versions.workManager}"
+    implementation("android.arch.work:work-rxjava2:${versions.workManager}")  { exclude group: 'io.reactivex.rxjava2', module: 'rxjava' }
+
+    // Room
+    implementation "android.arch.persistence.room:runtime:${versions.room}"
+    kapt "android.arch.persistence.room:compiler:${versions.room}"
+}
+
+ext {
+    artifact = "logcollection"
+    bintrayName = 'pushe-logcollection'
+    libraryName = "PusheLogCollection"
+    libraryDescription = "Pushe Plus LogCollection module"
+    uploadSources = true
+}
+
+apply from : "$rootProject.projectDir/bintray-android.gradle"

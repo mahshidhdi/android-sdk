@@ -1,0 +1,22 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="co.pushe.plus.notification">
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <application>
+        <service android:name="co.pushe.plus.notification.NotificationActionService" />
+
+        <activity
+            android:name="co.pushe.plus.notification.ui.PopupDialogActivity"
+            android:theme="@style/PusheTransparent"
+            android:excludeFromRecents="true">
+        </activity>
+
+        <activity android:name="co.pushe.plus.notification.ui.WebViewActivity"/>
+
+        <receiver android:name="co.pushe.plus.notification.ScheduledNotificationReceiver"  android:enabled="true"/>
+
+        <receiver android:name="co.pushe.plus.notification.NotificationAppInstaller$DownloadCompleteReceiver" android:enabled="true" android:exported="false" />
+        <receiver android:name="co.pushe.plus.notification.NotificationAppInstaller$DownloadCompleteNotificationClickReceiver" android:enabled="true"  android:exported="false" />
+
+    </application>
+</manifest>

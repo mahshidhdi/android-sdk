@@ -1,0 +1,1 @@
+include ':core', ':notification', ':utils', ':admin', ':analytics', ':sentry', ':test-utils', ':datalytics', ':base', ':rxjava', ':logcollection'

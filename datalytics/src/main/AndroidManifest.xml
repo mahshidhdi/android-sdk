@@ -1,0 +1,20 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="co.pushe.plus.datalytics" >
+    <application>
+        <receiver android:name="co.pushe.plus.datalytics.receivers.AppChangeReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <action android:name="android.intent.action.PACKAGE_INSTALL" />
+                <data android:scheme="package"/>
+            </intent-filter>
+        </receiver>
+        <service android:name="co.pushe.plus.datalytics.services.ScreenStateService">
+            <intent-filter>
+                <action android:name="co.pushe.plus.datalytics.services.ScreenStateService" />
+            </intent-filter>
+        </service>
+
+        <service android:name="co.pushe.plus.datalytics.geofence.GeofenceService"  android:enabled="true" android:exported="true"/>
+    </application>
+</manifest>

@@ -1,0 +1,402 @@
+[
+  {
+    "title": "Notification with Custom LED Color",
+    "question": "Did you see the purple LED color",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "with  Custom LED Color",
+        "content": "with  Custom LED Color",
+        "led_color": "-5635841",
+        "led_on": 300,
+        "led_off": 100,
+        "action": {
+          "url": "",
+          "action_type": "D"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Image",
+    "question": "Did you see the big image?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "with image",
+        "content": "with image",
+        "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBvo7rHOxhYnNu2Hduo8YTbr3lkPKdQ9AxJvri3zTZGwGRX3STIw",
+        "action": {
+          "url": "",
+          "action_type": "D"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Icon",
+    "question": "Did you see the icon?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "with icon",
+        "content": "with icon",
+        "icon": "http://api.pushe.co/media/notification-images/20181118-c72e3bbb506b431da89f04ab85b1a3e3.png",
+        "action": {
+          "url": "",
+          "action_type": "D"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Small Icon",
+    "question": "Did you see the arrow icon in notif bar?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "with small icon",
+        "content": "with small icon",
+        "notif_icon": "arrow",
+        "action": {
+          "url": "",
+          "action_type": "D"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Small Icon",
+    "question": "Did you see the bell icon (or if your android version is under 8 , arrow icon) in notif bar ?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "with small icon",
+        "content": "with small icon",
+        "notif_icon": "arrow",
+        "notif_icon_url": "http://cdn.onlinewebfonts.com/svg/img_489991.png",
+        "action": {
+          "url": "",
+          "action_type": "D"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Dismiss Action",
+    "question": "Click on notification\nDid notification dismiss?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "Dismiss Action",
+        "content": "Dismiss Action",
+        "action": {
+          "url": "",
+          "action_type": "D"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Url Action",
+    "question": "Click on notification\nDid browser open for you?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "Url Action",
+        "content": "Url Action",
+        "action": {
+          "url": "https://pushe.co/",
+          "action_type": "U"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with WebView Action",
+    "question": "Click on notification\nDid WebView open for you?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "WebView Action",
+        "content": "WebView Action",
+        "action": {
+          "url": "https://pushe.co/",
+          "action_type": "W"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Open App Action",
+    "question": "Click on notification\nDid app open for you?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "Open App Action",
+        "content": "Open App Action",
+        "action": {
+          "url": "",
+          "action_type": "A"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Open Activity Action",
+    "question": "Click on notification\nDid test activity open for you?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "Open Activity Action",
+        "content": "Open Activity Action",
+        "action": {
+          "action_data": ".notificationTest.EmptyActivity",
+          "action_type": "T"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Bazaar Action",
+    "question": "Click on notification\nDid Bazaar app open for you?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "Bazaar Action",
+        "content": "Bazaar Action",
+        "action": {
+          "url": "bazaar://details?id=shop.barkat.app",
+          "action_type": "U"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Dial Action",
+    "question": "Click on notification\nDid Dial page open for you?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "Dial Action",
+        "content": "Dial Action",
+        "action": {
+          "url": "tel:02111111111",
+          "action_type": "U"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Download Action",
+    "question": "Click on notification and wait...\nDid app download and open install page?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "Download Action",
+        "content": "Download Action",
+        "action": {
+          "dl_url": "https://khandevaneh.arsh.co/media/app_release/khandevaneh-v1.10.0.apk",
+          "package_name": "co.arsh.khandevaneh",
+          "open_immediate": true,
+          "action_type": "L"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Download and Webview Action",
+    "question": "Click on notification and wait...\nDid these things happen?\n1.webview opened for you\n2.download started\n3.when you clicked on download compelet notif, install page opened",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "Download and Webview Action",
+        "content": "Download and Webview Action",
+        "action": {
+          "url": "https://pushe.co/",
+          "dl_url": "https://khandevaneh.arsh.co/media/app_release/khandevaneh-v1.10.0.apk",
+          "package_name": "co.arsh.khandevaneh",
+          "action_type": "O"
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with Dialog Action",
+    "question": "Click on notification , Did these things happen?\n1.a dialog with icon opend for you.\n2.when you clicked on dismiss button , dialog closed.\n3.when you clicked on webview button , webview opened.",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "Dialog Action",
+        "content": "Dialog Action",
+        "action": {
+          "title": "Dialog title",
+          "content": "Dialog content",
+          "action_type": "G",
+          "icon": "http://api.pushe.co/media/notification-images/20181118-c72e3bbb506b431da89f04ab85b1a3e3.png",
+          "buttons": [
+            {
+              "btn_id": 1,
+              "btn_action": {
+                "url": "https://pushe.co/",
+                "action_type": "W"
+              },
+              "btn_content": "open webview",
+              "btn_order": 1
+            },
+            {
+              "btn_id": 2,
+              "btn_action": {
+                "url": "",
+                "action_type": "D"
+              },
+              "btn_content": "dismiss",
+              "btn_order": 2
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "title": "Notification with tag",
+    "question": "wait and don't dismiss first notification...\nDid second notification replaced with first one?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "first Notification",
+        "content": "first Notification",
+        "tag": "my tag"
+      }
+    },
+    "notificationJson2": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "second Notification",
+        "content": "second Notification",
+        "tag": "my tag"
+      }
+    }
+  },
+  {
+    "title": "Notification with otk",
+    "question": "wait and don't dismiss notification...\nDid notification remain and you didn't get the second notification?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "first Notification",
+        "content": "first Notification",
+        "otk": "OTK"
+      }
+    },
+    "notificationJson2": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "second Notification",
+        "content": "second Notification",
+        "otk": "OTK"
+      }
+    }
+  },
+  {
+    "title": "Notification with default sound",
+    "question": "Put your phone on ring mode\nDid you hear default sound?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "Notification with sound",
+        "content": "Notification with sound"
+      }
+    }
+  },
+  {
+    "title": "Notification with custom sound",
+    "question": "Put your phone on ring mode\nDid you hear custom sound?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "Notification with sound",
+        "content": "Notification with sound",
+        "sound_url": "http://static.pushe.co/mp3/1.mp3"
+      }
+    }
+  },
+  {
+    "title": "Notification with custom sound",
+    "question": "Put your phone on silent mode\nDid your phone vibrate?",
+    "notificationJson": {
+      "app_id": "co.pushe.adminapp",
+      "aids": [
+        "USER_AID"
+      ],
+      "data": {
+        "title": "Notification with sound",
+        "content": "Notification with sound",
+        "sound_url": "http://static.pushe.co/mp3/1.mp3"
+      }
+    }
+  }
+]

@@ -1,0 +1,2 @@
+-keep class co.pushe.plus.utils.InitProvider
+-keep class co.pushe.plus.utils.** { *; }
