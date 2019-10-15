@@ -2,12 +2,12 @@
 
 This section explains how to add initialization to a service module. For information on how the initialization steps are executed internally, see the internal docs on intialization.
 
-Every service module should contain a `PusheInit.kt` file in it's package root. Inside there should be an initialization class extending the abstract class `PusheComponentInitProvider`.
+Every service module should contain a `HengamInit.kt` file in it's package root. Inside there should be an initialization class extending the abstract class `HengamComponentInitProvider`.
 
 ```kotlin
-// PusheInit.kt
+// HengamInit.kt
 
-class AwesomeInitializer : PusheComponentInitProvider() {
+class AwesomeInitializer : HengamComponentInitProvider() {
     override fun preInitialize(context: Context) { }
 
     override fun postInitialize(context: Context) { }
@@ -50,14 +50,14 @@ The first step is to create an instance of your module's [Dagger Component](#dag
 
 ```kotlin
 val awesomeComponent = DaggerAwesomeComponent.builder()
-                .coreComponent(PusheInternals.getComponent(CoreComponent::class.java))
+                .coreComponent(HengamInternals.getComponent(CoreComponent::class.java))
                 .build()
 ```
 
 Note, since the `AwesomeComponent` has the `CoreComponent` as a dependency, it needs to be passed an instance of the `CoreComponent`. Use the `coreComponent()` method of the builder and provide it with a `CoreComponent` instance as shown above.
 
 #### 2. Extend Moshi (optional)
-If you want to use custom Moshi adapters related to your service, you could register them here to make them accessible throughout your module. As shown in the [Dagger Component](#dagger-component) section your component should contain a method which returns a `PusheMoshi` instance. Use this instance to extend Moshi as shown below:
+If you want to use custom Moshi adapters related to your service, you could register them here to make them accessible throughout your module. As shown in the [Dagger Component](#dagger-component) section your component should contain a method which returns a `HengamMoshi` instance. Use this instance to extend Moshi as shown below:
 
 ```kotlin
 awesomeComponent.moshi().extend { moshiBuilder: Moshi.Builder ->
@@ -74,10 +74,10 @@ awesomeComponent.messageDispatcher().listenForMessages()
 ```
 
 #### 4. Register Component
-You must register the service module component you have created in this step using the `PusheInternals.registerComponent()` class. This method accepts three arguments, the component class (`AwesomeComponent::class.java`), the component instance (`awesomeComponent`) and an instance of the component initializer.
+You must register the service module component you have created in this step using the `HengamInternals.registerComponent()` class. This method accepts three arguments, the component class (`AwesomeComponent::class.java`), the component instance (`awesomeComponent`) and an instance of the component initializer.
 
 ```kotlin
-PusheInternals.registerComponent(AwesomeComponent::class.java, awesomeComponent, this)
+HengamInternals.registerComponent(AwesomeComponent::class.java, awesomeComponent, this)
 ```
 
 !!! info "Optional argument"
@@ -85,10 +85,10 @@ PusheInternals.registerComponent(AwesomeComponent::class.java, awesomeComponent,
 
 
 #### 5. Register the Service API (optional)
-If your service module has an external API then you must register the API for it to become available to the user. Use the `PusheInternals.registerAPI()` method for registering an API class. The first argument of this method is a string which will be used identify your service module. Your service name should be defined as a `const val` in the `Pushe` class. 
+If your service module has an external API then you must register the API for it to become available to the user. Use the `HengamInternals.registerAPI()` method for registering an API class. The first argument of this method is a string which will be used identify your service module. Your service name should be defined as a `const val` in the `Hengam` class. 
 
 ```kotlin
-PusheInternals.registerApi(Pushe.AWESOME, PusheAwesome::class.java, awesomeComponent.api())
+HengamInternals.registerApi(Hengam.AWESOME, HengamAwesome::class.java, awesomeComponent.api())
 ```
 
 ### Post-Initialization
@@ -98,15 +98,15 @@ There's a good chance you will required an instance of your component class in t
 
 The final version of the initializer class will look similar to this:
 ```kotlin
-// PusheInit.kt
+// HengamInit.kt
 
-class AwesomeInitializer : PusheInitProvider() {
+class AwesomeInitializer : HengamInitProvider() {
     lateinit var awesomeComponent: AwesomeComponent
 
     override fun preInitialize(context: Context) {
         /* Create component instance */
         awesomeComponent = DaggerAwesomeComponent.builder()
-                .coreComponent(PusheInternals.getComponent(CoreComponent::class.java))
+                .coreComponent(HengamInternals.getComponent(CoreComponent::class.java))
                 .build()
 
         /* Extend Moshi Adapters */
@@ -119,10 +119,10 @@ class AwesomeInitializer : PusheInitProvider() {
         awesomeComponent.messageDispatcher().listenForMessages().
 
         /* Register Component */
-        PusheInternals.registerComponent(AwesomeComponent::class.java, awesomeComponent, this)
+        HengamInternals.registerComponent(AwesomeComponent::class.java, awesomeComponent, this)
 
         /* Register API */
-        PusheInternals.registerApi(Pushe.AWESOME, PusheAwesome::class.java, awesomeComponent.api())
+        HengamInternals.registerApi(Hengam.AWESOME, HengamAwesome::class.java, awesomeComponent.api())
     }
 
     override fun postInitialize(context: Context) { 
@@ -148,7 +148,7 @@ Add the following `provider` to the `application` tag in your service module's `
 ```xml
 <provider
     android:name=".AwesomeInitializer"
-    android:authorities="${applicationId}.pusheawesomeinitializer"
+    android:authorities="${applicationId}.hengamawesomeinitializer"
     android:initOrder="5"
     android:exported="false"
     android:enabled="true" />
@@ -156,6 +156,6 @@ Add the following `provider` to the `application` tag in your service module's `
 
 The `android.name` field must point to your initializer class. 
 
-The `android.authorities` must be a globally unique string on the user's device. To make sure the string is indeed unique, use the format `"${applicationId}.pushe<service-name>initializer"`.
+The `android.authorities` must be a globally unique string on the user's device. To make sure the string is indeed unique, use the format `"${applicationId}.hengam<service-name>initializer"`.
 
 The `android:initOrder` should be set to `5` for all service modules. If for some reason you **prefer** your module to be initialized sooner than other modules, you could set `android:initOrder` to a higher value but it should be no higher than `9`.

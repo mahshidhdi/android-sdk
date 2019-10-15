@@ -1,4 +1,4 @@
-# Pushe SDK Configuration Values
+# Hengam SDK Configuration Values
 
 ##### Core
 - **fcm_disabled** : Boolean

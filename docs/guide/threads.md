@@ -1,15 +1,15 @@
 # Threads
 
-Pushe code should not be executed on the Main Thread unless absolutely necessary. Running code on the Main Thread could cause the following two problems:
+Hengam code should not be executed on the Main Thread unless absolutely necessary. Running code on the Main Thread could cause the following two problems:
 
 1. Executing on the Main Threads slows down the hosting application
 2. Any unhandled exceptions which occur in the Main Thread will result in an [ANR](https://developer.android.com/topic/performance/vitals/anr)
 
-Instead, Pushe code should be run on one of it's own dedicated threads. Pushe defines two types of threads which code could be executed on:
+Instead, Hengam code should be run on one of it's own dedicated threads. Hengam defines two types of threads which code could be executed on:
 
 
 #### CPU Thread
-The CPU thread is basically the main thread of Pushe. Any code which is not an IO task should be run on the CPU thread. There is only one active CPU thread at any given time. As long as you make sure that you only access your data sctructures on the CPU thread, you can avoid doing concurrency checks and synchronizations.
+The CPU thread is basically the main thread of Hengam. Any code which is not an IO task should be run on the CPU thread. There is only one active CPU thread at any given time. As long as you make sure that you only access your data sctructures on the CPU thread, you can avoid doing concurrency checks and synchronizations.
 
 There are two ways to run code on the CPU thread:
 

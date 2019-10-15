@@ -143,8 +143,8 @@
 |os_version|String||
 |app_version|String||
 |av_code|String|App Version Code|
-|pushe_version|String||
-|pv_code|String|Pushe Version Code|
+|hengam_version|String||
+|pv_code|String|Hengam Version Code|
 |gplay_version|String?||
 |operator|String?||
 |operator_2|String?||

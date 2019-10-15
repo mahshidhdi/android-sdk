@@ -3,7 +3,7 @@
     "title": "Notification with Custom LED Color",
     "question": "Did you see the purple LED color",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -24,7 +24,7 @@
     "title": "Notification with Image",
     "question": "Did you see the big image?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -43,7 +43,7 @@
     "title": "Notification with Icon",
     "question": "Did you see the icon?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -62,7 +62,7 @@
     "title": "Notification with Small Icon",
     "question": "Did you see the arrow icon in notif bar?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -81,7 +81,7 @@
     "title": "Notification with Small Icon",
     "question": "Did you see the bell icon (or if your android version is under 8 , arrow icon) in notif bar ?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -101,7 +101,7 @@
     "title": "Notification with Dismiss Action",
     "question": "Click on notification\nDid notification dismiss?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -119,7 +119,7 @@
     "title": "Notification with Url Action",
     "question": "Click on notification\nDid browser open for you?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -127,7 +127,7 @@
         "title": "Url Action",
         "content": "Url Action",
         "action": {
-          "url": "https://pushe.co/",
+          "url": "https://hengam.io/",
           "action_type": "U"
         }
       }
@@ -137,7 +137,7 @@
     "title": "Notification with WebView Action",
     "question": "Click on notification\nDid WebView open for you?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -145,7 +145,7 @@
         "title": "WebView Action",
         "content": "WebView Action",
         "action": {
-          "url": "https://pushe.co/",
+          "url": "https://hengam.io/",
           "action_type": "W"
         }
       }
@@ -155,7 +155,7 @@
     "title": "Notification with Open App Action",
     "question": "Click on notification\nDid app open for you?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -173,7 +173,7 @@
     "title": "Notification with Open Activity Action",
     "question": "Click on notification\nDid test activity open for you?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -191,7 +191,7 @@
     "title": "Notification with Bazaar Action",
     "question": "Click on notification\nDid Bazaar app open for you?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -209,7 +209,7 @@
     "title": "Notification with Dial Action",
     "question": "Click on notification\nDid Dial page open for you?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -227,7 +227,7 @@
     "title": "Notification with Download Action",
     "question": "Click on notification and wait...\nDid app download and open install page?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -247,7 +247,7 @@
     "title": "Notification with Download and Webview Action",
     "question": "Click on notification and wait...\nDid these things happen?\n1.webview opened for you\n2.download started\n3.when you clicked on download compelet notif, install page opened",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -255,7 +255,7 @@
         "title": "Download and Webview Action",
         "content": "Download and Webview Action",
         "action": {
-          "url": "https://pushe.co/",
+          "url": "https://hengam.io/",
           "dl_url": "https://khandevaneh.arsh.co/media/app_release/khandevaneh-v1.10.0.apk",
           "package_name": "co.arsh.khandevaneh",
           "action_type": "O"
@@ -267,7 +267,7 @@
     "title": "Notification with Dialog Action",
     "question": "Click on notification , Did these things happen?\n1.a dialog with icon opend for you.\n2.when you clicked on dismiss button , dialog closed.\n3.when you clicked on webview button , webview opened.",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -283,7 +283,7 @@
             {
               "btn_id": 1,
               "btn_action": {
-                "url": "https://pushe.co/",
+                "url": "https://hengam.io/",
                 "action_type": "W"
               },
               "btn_content": "open webview",
@@ -307,7 +307,7 @@
     "title": "Notification with tag",
     "question": "wait and don't dismiss first notification...\nDid second notification replaced with first one?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -318,7 +318,7 @@
       }
     },
     "notificationJson2": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -333,7 +333,7 @@
     "title": "Notification with otk",
     "question": "wait and don't dismiss notification...\nDid notification remain and you didn't get the second notification?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -344,7 +344,7 @@
       }
     },
     "notificationJson2": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -359,7 +359,7 @@
     "title": "Notification with default sound",
     "question": "Put your phone on ring mode\nDid you hear default sound?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
@@ -373,14 +373,14 @@
     "title": "Notification with custom sound",
     "question": "Put your phone on ring mode\nDid you hear custom sound?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
       "data": {
         "title": "Notification with sound",
         "content": "Notification with sound",
-        "sound_url": "http://static.pushe.co/mp3/1.mp3"
+        "sound_url": "https://api.hengam.me/static/public/1.mp3"
       }
     }
   },
@@ -388,14 +388,14 @@
     "title": "Notification with custom sound",
     "question": "Put your phone on silent mode\nDid your phone vibrate?",
     "notificationJson": {
-      "app_id": "co.pushe.adminapp",
+      "app_id": "io.hengam.adminapp",
       "aids": [
         "USER_AID"
       ],
       "data": {
         "title": "Notification with sound",
         "content": "Notification with sound",
-        "sound_url": "http://static.pushe.co/mp3/1.mp3"
+        "sound_url": "https://api.hengam.me/static/public/1.mp3"
       }
     }
   }

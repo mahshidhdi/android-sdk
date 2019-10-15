@@ -21,10 +21,10 @@
 #-renamesourcefileattribute SourceFile
 
 # Keep Debug Commands
--keep class co.pushe.plus.internal.PusheDebug { *; }
--keep class co.pushe.plus.internal.DebugInput { *; }
--keep class co.pushe.plus.internal.DebugCommandProvider { *; }
--keep class * extends co.pushe.plus.internal.DebugCommandProvider { *; }
+-keep class io.hengam.lib.internal.HengamDebug { *; }
+-keep class io.hengam.lib.internal.DebugInput { *; }
+-keep class io.hengam.lib.internal.DebugCommandProvider { *; }
+-keep class * extends io.hengam.lib.internal.DebugCommandProvider { *; }
 
 
 # -- Okio --

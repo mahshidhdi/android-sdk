@@ -1,4 +1,4 @@
-site_name: Pushe Internal Docs
+site_name: Hengam Internal Docs
 theme:
   name: 'material'
   logo:
@@ -51,7 +51,7 @@ pages:
     - Receiving Messages: guide/receiving-message.md
     - Threads: guide/threads.md
     - Running Tasks: guide/tasks.md
-    - Providing APIs for Developers: guide/pushe-api.md
+    - Providing APIs for Developers: guide/hengam-api.md
     - Logging: guide/logging.md
   - Core Module:
     - Index: core/index.md

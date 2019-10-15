@@ -1,9 +1,9 @@
 # Running Background Tasks
 
-Pushe uses Android WorkManager internally for scheduling Jobs. We provide an extra layer of abstraction on top of Android WorkManager's Jobs which we call _Tasks_. In this section we will explain how to create and run Pushe Tasks.
+Hengam uses Android WorkManager internally for scheduling Jobs. We provide an extra layer of abstraction on top of Android WorkManager's Jobs which we call _Tasks_. In this section we will explain how to create and run Hengam Tasks.
 
 !!! question "When should I use Tasks?"
-    One thing to note is that the Pushe code is already run on a background thread, mainly the [CPU thread](/guide/threads#cpu-thread). If your purpose is to simply have a code run in the background, there is usually no need to use Tasks. 
+    One thing to note is that the Hengam code is already run on a background thread, mainly the [CPU thread](/guide/threads#cpu-thread). If your purpose is to simply have a code run in the background, there is usually no need to use Tasks. 
 
     Also, if you simply want to have a piece of code run asynchronous to your current flow, use `cpuThread()` to add a function to the execution queue.
 
@@ -27,10 +27,10 @@ Pushe uses Android WorkManager internally for scheduling Jobs. We provide an ext
 
 
 ## Creating a Task
-To create a new task, subclass the `PusheTask` class and override the `perform()` method. 
+To create a new task, subclass the `HengamTask` class and override the `perform()` method. 
 
 ```kotlin
-class AwesomeTask : PusheTask("Awesome Task Name") {
+class AwesomeTask : HengamTask("Awesome Task Name") {
     fun perform(): Single<Result> {
         // Perform work
         return Single.just(Result.SUCCESS)
@@ -52,7 +52,7 @@ The `Result` enum is the same class provided by Android WorkManager. It accepts 
 In order to start a task, you will need an instance of the `OneTimeTaskOptions` interface. A good convention to follow is to add a singleton implementation of this interface inside the task class.
 
 ```kotlin
-class AwesomeTask : PusheTask("My Task Name") {
+class AwesomeTask : HengamTask("My Task Name") {
     fun perform(): Single<Result> {
         // Perform work
         return Single.just(Result.SUCCESS)
@@ -104,10 +104,10 @@ val taskData = taskDataOf(
 taskScheduler.scheduleTask(AwesomeTask.Options, taskData)
 ```
 
-Use the `inputData` variable inside the your `PusheTask` subclass to retrieve the data given when running the task.
+Use the `inputData` variable inside the your `HengamTask` subclass to retrieve the data given when running the task.
 
 ```kotlin
-class AwesomeTask : PusheTask("Awesome Task Name") {
+class AwesomeTask : HengamTask("Awesome Task Name") {
     fun perform(): Single<Result> {
         val data = inputData.getString("firstData")
         ...

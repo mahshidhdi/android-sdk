@@ -59,9 +59,9 @@ buildscript {
 
     ext {
         bintrayRepo = 'plus'
-        publishedGroupId = 'co.pushe.plus'
+        publishedGroupId = 'io.hengam.lib'
         siteUrl = 'https://pushe.co'
-        gitUrl = 'https://github.com/pusheco/android-sdk'
+        gitUrl = 'https://github.com/hengamco/android-sdk'
 
         licenseName = 'The Apache Software License, Version 2.0'
         licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
@@ -82,7 +82,7 @@ allprojects {
             url "https://repo.eclipse.org/content/repositories/paho-snapshots/"
         }
         maven {
-            url "https://dl.bintray.com/pushe/android"
+            url "https://dl.bintray.com/hengam/android"
         }
     }
 }

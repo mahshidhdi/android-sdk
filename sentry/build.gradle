@@ -59,9 +59,9 @@ dependencies {
 
 ext {
     artifact = "sentry"
-    bintrayName = 'pushe-sentry'
-    libraryName = "PusheSentry"
-    libraryDescription = "Pushe Plus Sentry module"
+    bintrayName = 'hengam-sentry'
+    libraryName = "HengamSentry"
+    libraryDescription = "Hengam Plus Sentry module"
     uploadSources = true
 }
 

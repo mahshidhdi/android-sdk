@@ -64,9 +64,9 @@ dependencies {
 
 ext {
     artifact = "core"
-    bintrayName = 'pushe-core'
-    libraryName = "PusheCore"
-    libraryDescription = "Pushe Plus Core module"
+    bintrayName = 'hengam-core'
+    libraryName = "HengamCore"
+    libraryDescription = "Hengam Plus Core module"
 }
 
 apply from : "$rootProject.projectDir/bintray-android.gradle"

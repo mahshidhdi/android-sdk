@@ -1,5 +1,5 @@
--keep class co.pushe.plus.notification.PusheNotification { *; }
--keep class co.pushe.plus.notification.UserNotification { *; }
--keep public interface co.pushe.plus.notification.PusheNotificationListener { *; }
--keep class co.pushe.plus.notification.NotificationData { *; }
--keep class co.pushe.plus.notification.NotificationButtonData { *; }
+-keep class io.hengam.lib.notification.HengamNotification { *; }
+-keep class io.hengam.lib.notification.UserNotification { *; }
+-keep public interface io.hengam.lib.notification.HengamNotificationListener { *; }
+-keep class io.hengam.lib.notification.NotificationData { *; }
+-keep class io.hengam.lib.notification.NotificationButtonData { *; }

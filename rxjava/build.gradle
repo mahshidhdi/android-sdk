@@ -15,9 +15,9 @@ targetCompatibility = "7"
 
 ext {
     artifact = "rxjava"
-    bintrayName = 'pushe-rxjava'
-    libraryName = "PusheRxJava"
-    libraryDescription = "Minified RxJava library used in Pushe modules"
+    bintrayName = 'hengam-rxjava'
+    libraryName = "HengamRxJava"
+    libraryDescription = "Minified RxJava library used in Hengam modules"
 }
 
 

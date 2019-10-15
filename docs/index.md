@@ -1,6 +1,6 @@
-# Pushe Internal Docs
+# Hengam Internal Docs
 
-The purpose of this documentation is to help developers become familiar with and able to contribute to the Pushe Android SDK.
+The purpose of this documentation is to help developers become familiar with and able to contribute to the Hengam Android SDK.
 
 The documentation is composed of the following main sections:
 

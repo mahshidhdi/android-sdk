@@ -33,9 +33,9 @@ dependencies {
 
 ext {
     artifact = "utils"
-    bintrayName = 'pushe-utils'
-    libraryName = "PusheUtils"
-    libraryDescription = "Pushe Plus Utils module"
+    bintrayName = 'hengam-utils'
+    libraryName = "HengamUtils"
+    libraryDescription = "Hengam Plus Utils module"
 }
 
 apply from : "$rootProject.projectDir/bintray-android.gradle"

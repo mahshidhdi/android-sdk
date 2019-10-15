@@ -1,4 +1,4 @@
-# Pushe SDK ChangeLog
+# Hengam SDK ChangeLog
 
 ## Unreleased
 
@@ -12,13 +12,13 @@
 - Add `rate_limit` field to Geofence messages
 - The values used for the Geofence message (`t71`) `trigger` field have been changed from 0 and 1 to
   1 and to.
-- Make the public-ip APIs configurable and change the default list to use the Pushe API first
+- Make the public-ip APIs configurable and change the default list to use the Hengam API first
 
 ## 2.0.0-beta03 (1 July, 2019)
 - Added a new module called **LogCollection** to collect SDK logs and send them to a private server for
   debug purposes (This module is not included in the `Base` module and is added separately to limited
   number of apps)
-- Added a new downstream message, `t63`, to run predefined debug commands previously used in pushe admin app.
+- Added a new downstream message, `t63`, to run predefined debug commands previously used in hengam admin app.
   This message alongside the `LogCollection` module will be used to find possible bugs in the sdk.
 
 #### Analytics
@@ -37,8 +37,8 @@
 
 ## 2.0.0-beta02 (8 June, 2019)
 - Removed the rx-relay, rx-android and rx-preferences dependencies from all modules. Rx-preference's
-  functionality has been implemented in the `PusheStorage` utility class. The classes and functions
-  which were used from the other dependencies have been copied over to the `co.pushe.plus.utils.rx`
+  functionality has been implemented in the `HengamStorage` utility class. The classes and functions
+  which were used from the other dependencies have been copied over to the `io.hengam.lib.utils.rx`
   package.
 - Debug commands have been moved from the admin app to their related modules
 - Will use a custom minified RxJava build instead of the original one (except for running tests).
@@ -48,7 +48,7 @@
   by it on the final APK.
 
 #### Core
-- Add support for using separate Firebase apps along side Pushe. Pushe will become the default Firebase
+- Add support for using separate Firebase apps along side Hengam. Hengam will become the default Firebase
   app only if no other default apps exist in the project.
 - Fix bug caused by persisting and restoring a message multiple times which resulted in malformed
   messages like `t5: {"a": {"a": {"a": {...}}}`
@@ -61,7 +61,7 @@
 - Make changes to the `MessageStore` which should improve memory usage
 
 #### Notification
-- Modified notification callbacks in PusheNotificationListener. The custom content is now also
+- Modified notification callbacks in HengamNotificationListener. The custom content is now also
   accessible from the `NotificationData` class.
 - Added capability for showing Notifications based on Geofencing events
 - Added support for native notification badges
@@ -97,7 +97,7 @@
   reported correctly.
 
 #### Core
-- Added developer APIs for `Pushe.initialize()` and `Pushe.getPusheId()` for better backward
+- Added developer APIs for `Hengam.initialize()` and `Hengam.getHengamId()` for better backward
   compatibility but marked them as deprecated.
 - Combined the SharedPreference file used by `RxPreferences` and the `StorageFactory` class.
 
@@ -133,8 +133,8 @@
 - [fix] Fix concurrent modification bug in message store caused when persisting messages in the io
   thread
 - Maximum upstream parcel size and upstream message timeouts and expiration times are now configurable
-- Combined manifest meta tag for `app_token` and `fcm_sender_id` into a single `pushe_token` tag
-- The Pushe Id (pid) identifier no longer exists. The available user id's are now google
+- Combined manifest meta tag for `app_token` and `fcm_sender_id` into a single `hengam_token` tag
+- The Hengam Id (pid) identifier no longer exists. The available user id's are now google
   advertisement id (gaid), android id (aid) or custom id (cid).
 - Several log options for logging to LogCat, such as log level, can now be configured through the manifest
 - Application first-install-time is now included in the registration message
@@ -221,7 +221,7 @@
 #### Core
 - Allow the developer to set user email and phone number in addition to custom id.
 - [fix] Resolved concurrent modification error in upstream message sending.
-- The App ID and Pushe version will now be sent in all upstream parcels.
+- The App ID and Hengam version will now be sent in all upstream parcels.
 
 #### Datalytics
 - Data collection tasks initialization and scheduling will now happen after registration has been
@@ -243,12 +243,12 @@
 - [fix] Fixed incorrect topic names in topic update messages (i.e., t12)
 - Disabled firebase analytics (https://firebase.google.com/support/guides/disable-analytics)
 - Using Advertisement Id can now be disabled by the developer from the manifest
-- The developer can set a custom identifier for the user using `Pushe.setCustomId`. The custom id
+- The developer can set a custom identifier for the user using `Hengam.setCustomId`. The custom id
   will be sent with all upstream messages. The developer can use this id for sending push notifications.
 
 ##### Notification
 - [change] Notification callbacks are now added using API functions (e.g,
-  `PusheNotification.setNotificationListener()`) instead of extending `Application`. The callbacks
+  `HengamNotification.setNotificationListener()`) instead of extending `Application`. The callbacks
   will be called on the Main thread.
 - Notification small icons can now be URLs (only for Android >= 23) instead of resource names
 - [fix] Fixed parsing LED colors in notification messages
@@ -258,7 +258,7 @@
 
 ##### Datalytics
 - [change] Use a list of public APIs instead of just one for obtaining the device public IP. The
-  APIs will be tried sequentially until one of them succeeds. The Pushe hosted API will be tried last.
+  APIs will be tried sequentially until one of them succeeds. The Hengam hosted API will be tried last.
 - When retrieving cellular data if the cell type is unknown we will now attempt to obtain cell data
   by parsing the output of `toString()` on the cell object.
 - Includes application signatures when collecting app data
@@ -343,11 +343,11 @@
     - A _courier_ is a service used for sending and receiving messages, e.g., FCM courier, HTTP courier, Befrest courier etc. .
 - Implements subscribing to and unsubscribing from FCM topics and provides an API to developers for subscribing to topics.
 - Performs registration with server on app start if registration is needed.
-- [change] Initialization happens automatically on app start and before activities are started (no `Pushe.initialize()` call is needed).
+- [change] Initialization happens automatically on app start and before activities are started (no `Hengam.initialize()` call is needed).
 - Sends message deliveries for downstream messages which request deliveries.
 - Uses sentry for collecting error reports.
 - [change] Uses Android WorkManager for scheduling tasks (instead of Evernote scheduler)
-- [change] Uses Advertisement Id as the device ID (instead of Pushe Id)
+- [change] Uses Advertisement Id as the device ID (instead of Hengam Id)
 - Allows sending upstream messages with three different priorities:
     - **IMMEDIATE**: A message sent with this priority will be sent immediately.
     - **SOON**: A message sent with this priority will wait a few seconds before sending.

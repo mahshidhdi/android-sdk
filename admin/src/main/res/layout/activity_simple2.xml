@@ -118,7 +118,7 @@
 
     <fragment
         android:id="@+id/fragmentContainer"
-        android:name="co.pushe.plus.admin.analytics.fragments.FragmentB"
+        android:name="io.hengam.lib.admin.analytics.fragments.FragmentB"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginBottom="8dp"

@@ -32,9 +32,9 @@ dependencies {
 
 ext {
     artifact = "base"
-    bintrayName = 'pushe-base'
-    libraryName = "PusheBase"
-    libraryDescription = "Pushe Plus Base module. Includes all the default modules"
+    bintrayName = 'hengam-base'
+    libraryName = "HengamBase"
+    libraryDescription = "Hengam Plus Base module. Includes all the default modules"
     uploadSources = true
 }
 

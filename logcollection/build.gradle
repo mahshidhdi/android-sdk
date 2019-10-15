@@ -63,9 +63,9 @@ dependencies {
 
 ext {
     artifact = "logcollection"
-    bintrayName = 'pushe-logcollection'
-    libraryName = "PusheLogCollection"
-    libraryDescription = "Pushe Plus LogCollection module"
+    bintrayName = 'hengam-logcollection'
+    libraryName = "HengamLogCollection"
+    libraryDescription = "Hengam Plus LogCollection module"
     uploadSources = true
 }
 

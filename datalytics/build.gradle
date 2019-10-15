@@ -62,9 +62,9 @@ dependencies {
 
 ext {
     artifact = "datalytics"
-    bintrayName = 'pushe-datalytics'
-    libraryName = "PusheDatalytics"
-    libraryDescription = "Pushe Plus Datalytics module"
+    bintrayName = 'hengam-datalytics'
+    libraryName = "HengamDatalytics"
+    libraryDescription = "Hengam Plus Datalytics module"
     uploadSources = true
 }
 

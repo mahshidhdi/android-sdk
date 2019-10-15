@@ -58,9 +58,9 @@ dependencies {
 
 ext {
     artifact = "notification"
-    bintrayName = 'pushe-notif'
-    libraryName = "PusheNotification"
-    libraryDescription = "Pushe Plus Notification module"
+    bintrayName = 'hengam-notif'
+    libraryName = "HengamNotification"
+    libraryDescription = "Hengam Plus Notification module"
 }
 
 apply from : "$rootProject.projectDir/bintray-android.gradle"

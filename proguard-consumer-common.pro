@@ -1,11 +1,11 @@
--keepclassmembers enum co.pushe.plus.** { *; }
--keep class * extends co.pushe.plus.internal.PusheComponentInitializer {
+-keepclassmembers enum io.hengam.lib.** { *; }
+-keep class * extends io.hengam.lib.internal.HengamComponentInitializer {
     public void preInitialize(android.content.Context);
     public void postInitialize(android.content.Context);
 }
--keep class co.pushe.plus.internal.PusheInitializer { *; }
+-keep class io.hengam.lib.internal.HengamInitializer { *; }
 
--keep class co.pushe.plus.** extends co.pushe.plus.internal.task.PusheTask { *; }
+-keep class io.hengam.lib.** extends io.hengam.lib.internal.task.HengamTask { *; }
 
 # -- Moshi --
 -dontwarn okio.**
@@ -24,4 +24,4 @@
 -dontwarn org.codehaus.mojo.animal_sniffer.*
 
 # Keep Exception names
--keepnames class co.pushe.plus.** extends java.lang.Exception
+-keepnames class io.hengam.lib.** extends java.lang.Exception

@@ -9,19 +9,19 @@
       <module fileurl="file://$PROJECT_DIR$/datalytics/datalytics.iml" filepath="$PROJECT_DIR$/datalytics/datalytics.iml" />
       <module fileurl="file://$PROJECT_DIR$/logcollection/logcollection.iml" filepath="$PROJECT_DIR$/logcollection/logcollection.iml" />
       <module fileurl="file://$PROJECT_DIR$/notification/notification.iml" filepath="$PROJECT_DIR$/notification/notification.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/pushe-v2.iml" filepath="$PROJECT_DIR$/.idea/pushe-v2.iml" />
-      <module fileurl="file://$PROJECT_DIR$/admin/pushe-v2-admin.iml" filepath="$PROJECT_DIR$/admin/pushe-v2-admin.iml" />
-      <module fileurl="file://$PROJECT_DIR$/analytics/pushe-v2-analytics.iml" filepath="$PROJECT_DIR$/analytics/pushe-v2-analytics.iml" />
-      <module fileurl="file://$PROJECT_DIR$/base/pushe-v2-base.iml" filepath="$PROJECT_DIR$/base/pushe-v2-base.iml" />
-      <module fileurl="file://$PROJECT_DIR$/core/pushe-v2-core.iml" filepath="$PROJECT_DIR$/core/pushe-v2-core.iml" />
-      <module fileurl="file://$PROJECT_DIR$/datalytics/pushe-v2-datalytics.iml" filepath="$PROJECT_DIR$/datalytics/pushe-v2-datalytics.iml" />
-      <module fileurl="file://$PROJECT_DIR$/logcollection/pushe-v2-logcollection.iml" filepath="$PROJECT_DIR$/logcollection/pushe-v2-logcollection.iml" />
-      <module fileurl="file://$PROJECT_DIR$/notification/pushe-v2-notification.iml" filepath="$PROJECT_DIR$/notification/pushe-v2-notification.iml" />
-      <module fileurl="file://$PROJECT_DIR$/rxjava/pushe-v2-rxjava.iml" filepath="$PROJECT_DIR$/rxjava/pushe-v2-rxjava.iml" />
-      <module fileurl="file://$PROJECT_DIR$/sentry/pushe-v2-sentry.iml" filepath="$PROJECT_DIR$/sentry/pushe-v2-sentry.iml" />
-      <module fileurl="file://$PROJECT_DIR$/test-utils/pushe-v2-test-utils.iml" filepath="$PROJECT_DIR$/test-utils/pushe-v2-test-utils.iml" />
-      <module fileurl="file://$PROJECT_DIR$/utils/pushe-v2-utils.iml" filepath="$PROJECT_DIR$/utils/pushe-v2-utils.iml" />
-      <module fileurl="file://$PROJECT_DIR$/repo-pushe-v2.iml" filepath="$PROJECT_DIR$/repo-pushe-v2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/hengam-v2.iml" filepath="$PROJECT_DIR$/.idea/hengam-v2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/admin/hengam-v2-admin.iml" filepath="$PROJECT_DIR$/admin/hengam-v2-admin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/analytics/hengam-v2-analytics.iml" filepath="$PROJECT_DIR$/analytics/hengam-v2-analytics.iml" />
+      <module fileurl="file://$PROJECT_DIR$/base/hengam-v2-base.iml" filepath="$PROJECT_DIR$/base/hengam-v2-base.iml" />
+      <module fileurl="file://$PROJECT_DIR$/core/hengam-v2-core.iml" filepath="$PROJECT_DIR$/core/hengam-v2-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/datalytics/hengam-v2-datalytics.iml" filepath="$PROJECT_DIR$/datalytics/hengam-v2-datalytics.iml" />
+      <module fileurl="file://$PROJECT_DIR$/logcollection/hengam-v2-logcollection.iml" filepath="$PROJECT_DIR$/logcollection/hengam-v2-logcollection.iml" />
+      <module fileurl="file://$PROJECT_DIR$/notification/hengam-v2-notification.iml" filepath="$PROJECT_DIR$/notification/hengam-v2-notification.iml" />
+      <module fileurl="file://$PROJECT_DIR$/rxjava/hengam-v2-rxjava.iml" filepath="$PROJECT_DIR$/rxjava/hengam-v2-rxjava.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sentry/hengam-v2-sentry.iml" filepath="$PROJECT_DIR$/sentry/hengam-v2-sentry.iml" />
+      <module fileurl="file://$PROJECT_DIR$/test-utils/hengam-v2-test-utils.iml" filepath="$PROJECT_DIR$/test-utils/hengam-v2-test-utils.iml" />
+      <module fileurl="file://$PROJECT_DIR$/utils/hengam-v2-utils.iml" filepath="$PROJECT_DIR$/utils/hengam-v2-utils.iml" />
+      <module fileurl="file://$PROJECT_DIR$/repo-hengam-v2.iml" filepath="$PROJECT_DIR$/repo-hengam-v2.iml" />
       <module fileurl="file://$PROJECT_DIR$/rxjava/rxjava.iml" filepath="$PROJECT_DIR$/rxjava/rxjava.iml" />
       <module fileurl="file://$PROJECT_DIR$/sentry/sentry.iml" filepath="$PROJECT_DIR$/sentry/sentry.iml" />
       <module fileurl="file://$PROJECT_DIR$/test-utils/test-utils.iml" filepath="$PROJECT_DIR$/test-utils/test-utils.iml" />

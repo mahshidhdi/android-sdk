@@ -28,7 +28,7 @@ Plog.info {
 In the remainder of this section we will explain the different parameters a log entry takes and the different ways for providing those parameters.
 
 !!! info "This is not LogCat"
-    Plog is used for Pushe's internal logging. When running in production code, no logs made from the Plog system will be shown to the user. However, this does not mean no logs _should_ be shown to the user, you should manage log messages which will be shown to the user using LogCat directly.
+    Plog is used for Hengam's internal logging. When running in production code, no logs made from the Plog system will be shown to the user. However, this does not mean no logs _should_ be shown to the user, you should manage log messages which will be shown to the user using LogCat directly.
 
 ### Log Level
 There are six log levels available. The log level is defined based on the method used for logging (e.g. `Plof.info()`, `Plog.debug()`, etc.) and cannot be changed afterwards.
@@ -45,7 +45,7 @@ The `DEBUG` level should be used for log entries which provide meaningful inform
 
 **INFO**
 
-The `INFO` level should be used for log entries which provide useful and important information about expected events happening throughout Pushe's execution.
+The `INFO` level should be used for log entries which provide useful and important information about expected events happening throughout Hengam's execution.
 
 **WARN**
 
@@ -53,13 +53,13 @@ The `WARN` level should be used for _undesired_ events which are expected to hap
 
 **ERROR**
 
-The `ERROR` level should be used when an unexpected error has occured within the system indicating that it was caused by a problem which should be fixed or handled more apropiately. Events resulting in this log level are typically still manageable and will not result in total loss of Pushe's functionality. Log entries with the `ERROR` level will be reported to crash reporting services.
+The `ERROR` level should be used when an unexpected error has occured within the system indicating that it was caused by a problem which should be fixed or handled more apropiately. Events resulting in this log level are typically still manageable and will not result in total loss of Hengam's functionality. Log entries with the `ERROR` level will be reported to crash reporting services.
 
 **WTF**
 
 The `WTF` level should be used in two cases. 
 
-1. When an error or situation occurs which absolutely should not happen and interferes with the basic operation of Pushe
+1. When an error or situation occurs which absolutely should not happen and interferes with the basic operation of Hengam
 2. When an unhandled exception is caught by the `ExceptionCatcher`, meaning an unexpected error occurred and it was not handled and logged in the appropiate place.
 
 Log entries with the `WTF` level will be reported to crash reporting services.
@@ -110,11 +110,11 @@ Plog["Tag1", "Tag2"].info("This log has two tags")
 The two methods can be mixed and matched, but it's best to use only one method for each log entry.
 
 !!! tip "Don't get carried away with tags"
-    Aim at not making tags too specific and keeping the number of tags limited. Typically, each pushe service module should have one main tag which is included in all log entries inside that module and possibly a couple other tags for it's different main subcomponents.
+    Aim at not making tags too specific and keeping the number of tags limited. Typically, each hengam service module should have one main tag which is included in all log entries inside that module and possibly a couple other tags for it's different main subcomponents.
 
 #### Tag Constants
 
-Every pushe service module should have a `LogTag` object defined in the `Constants.kt` file. All log tags used within the module should be defined as constants in this object. 
+Every hengam service module should have a `LogTag` object defined in the `Constants.kt` file. All log tags used within the module should be defined as constants in this object. 
 
 ```kotlin
 // Constants.kt

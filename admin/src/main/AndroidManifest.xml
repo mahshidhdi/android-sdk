@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="co.pushe.plus.admin">
+    package="io.hengam.lib.admin">
 
     <!-- <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> -->
     <!-- <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" /> -->
@@ -13,7 +13,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
-        android:name="co.pushe.plus.admin.AdminApplication"
+        android:name="io.hengam.lib.admin.AdminApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -21,14 +21,14 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <provider
-            android:name="co.pushe.plus.admin.AdminInit"
+            android:name="io.hengam.lib.admin.AdminInit"
             android:authorities="${applicationId}.admininitializer"
             android:enabled="true"
             android:exported="false"
             android:initOrder="9" />
         <provider
             android:name="android.support.v4.content.FileProvider"
-            android:authorities="co.pushe.plus.admin.file_provider_authority"
+            android:authorities="io.hengam.lib.admin.file_provider_authority"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
@@ -37,10 +37,10 @@
         </provider>
 
         <activity
-            android:name="co.pushe.plus.admin.MainActivity"
+            android:name="io.hengam.lib.admin.MainActivity"
             android:label="@string/app_name"
             android:launchMode="singleInstance"
-            android:taskAffinity="co.ronash.admin.AffinityLog"
+            android:taskAffinity="io.hengam.adminapp.AffinityLog"
             android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -52,52 +52,52 @@
             </intent-filter>
         </activity>
         <activity
-            android:taskAffinity="co.ronash.admin.AffinityAnalyticsTest"
-            android:name="co.pushe.plus.admin.analytics.activities.MultipleFrameLayoutActivity"
+            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
+            android:name="io.hengam.lib.admin.analytics.activities.MultipleFrameLayoutActivity"
             android:theme="@style/AnalyticsTheme"/>
         <activity
-            android:name="co.pushe.plus.admin.analytics.activities.SimpleActivity"
-            android:taskAffinity="co.ronash.admin.AffinityAnalyticsTest"
+            android:name="io.hengam.lib.admin.analytics.activities.SimpleActivity"
+            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
             android:theme="@style/AnalyticsTheme" />
         <activity
-            android:taskAffinity="co.ronash.admin.AffinityAnalyticsTest"
-            android:name="co.pushe.plus.admin.analytics.activities.SimpleActivity2"
+            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
+            android:name="io.hengam.lib.admin.analytics.activities.SimpleActivity2"
             android:theme="@style/AnalyticsTheme"/>
         <activity
-            android:taskAffinity="co.ronash.admin.AffinityAnalyticsTest"
-            android:name="co.pushe.plus.admin.analytics.activities.FragmentActivity"
+            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
+            android:name="io.hengam.lib.admin.analytics.activities.FragmentActivity"
             android:theme="@style/AnalyticsTheme"/>
         <activity
-            android:taskAffinity="co.ronash.admin.AffinityAnalyticsTest"
-            android:name="co.pushe.plus.admin.analytics.activities.DuplicateFragmentActivity"
+            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
+            android:name="io.hengam.lib.admin.analytics.activities.DuplicateFragmentActivity"
             android:theme="@style/AnalyticsTheme"/>
         <activity
-            android:taskAffinity="co.ronash.admin.AffinityAnalyticsTest"
-            android:name="co.pushe.plus.admin.analytics.activities.NestedFragmentsActivity"
+            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
+            android:name="io.hengam.lib.admin.analytics.activities.NestedFragmentsActivity"
             android:theme="@style/AnalyticsTheme" />
         <activity
-            android:taskAffinity="co.ronash.admin.AffinityAnalyticsTest"
-            android:name="co.pushe.plus.admin.analytics.activities.ListViewActivity"
+            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
+            android:name="io.hengam.lib.admin.analytics.activities.ListViewActivity"
             android:windowSoftInputMode="stateHidden"
             android:theme="@style/AnalyticsTheme" />
         <activity
-            android:name="co.pushe.plus.admin.analytics.activities.ViewPagerActivity"
-            android:taskAffinity="co.ronash.admin.AffinityAnalyticsTest"
+            android:name="io.hengam.lib.admin.analytics.activities.ViewPagerActivity"
+            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
             android:theme="@style/AnalyticsTheme" />
 
-        <activity android:name="co.pushe.plus.admin.ChangelogActivity" />
+        <activity android:name="io.hengam.lib.admin.ChangelogActivity" />
 
-        <activity android:name="co.pushe.plus.admin.notificationTest.NotificationTestMainActivity"/>
-        <activity android:name="co.pushe.plus.admin.notificationTest.NotificationTestQuestionsActivity"/>
-        <activity android:name="co.pushe.plus.admin.notificationTest.EmptyActivity"/>
+        <activity android:name="io.hengam.lib.admin.notificationTest.NotificationTestMainActivity"/>
+        <activity android:name="io.hengam.lib.admin.notificationTest.NotificationTestQuestionsActivity"/>
+        <activity android:name="io.hengam.lib.admin.notificationTest.EmptyActivity"/>
         
         <meta-data
-            android:name="pushe_token"
-            android:value="co.pushe.adminapp@403914981931" />
+            android:name="hengam_token"
+            android:value="io.hengam.adminapp@292417903871" />
 
         <meta-data
-            android:name="pushe_log_collection_url"
-            android:value="https://sdklogs.ronash.co" />
+            android:name="hengam_log_collection_url"
+            android:value="https://sdklogs.hengam.me" />
 
 
     </application>

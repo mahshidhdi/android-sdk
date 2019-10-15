@@ -109,9 +109,9 @@ The `persistAcrossRuns` determines whether this should happen. If `persistAcross
 
 
 !!! example "Example of non-persistance"
-    An example of when we don't want the message to be persistant is the registration message. On application start, Pushe checks whether registration has been completed and if it has not will send a registration message. 
+    An example of when we don't want the message to be persistant is the registration message. On application start, Hengam checks whether registration has been completed and if it has not will send a registration message. 
     
-    Suppose the message cannot successfully be sent before the application closes, if registration message was persistant then on the next application start the message will be restored and sent. However, Pushe will also send another registration message because registration is still not complete. 
+    Suppose the message cannot successfully be sent before the application closes, if registration message was persistant then on the next application start the message will be restored and sent. However, Hengam will also send another registration message because registration is still not complete. 
     
     To avoid having mulitple in flight registration messages, we will send the registration messages with `persistAcrossRuns` set to `false`.
 

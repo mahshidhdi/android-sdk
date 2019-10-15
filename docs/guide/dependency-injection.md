@@ -1,6 +1,6 @@
 # Dependency Injection
 
-Pushe uses the Dagger 2 library for dependency injection. This section explains how to use Dagger with Pushe and some conventions which we follow when using Dagger. Note, this is not a complete reference or in depth explaination of the Dagger library, it assumes basic understanding of Dagger.
+Hengam uses the Dagger 2 library for dependency injection. This section explains how to use Dagger with Hengam and some conventions which we follow when using Dagger. Note, this is not a complete reference or in depth explaination of the Dagger library, it assumes basic understanding of Dagger.
 
 
 ## Dagger Basics
@@ -67,7 +67,7 @@ We need to define Dagger Components in order to use dependency injection with Da
 
 All we need to do is provide an interface for the Component and annotate it with `@Component`. Dagger will then generate an implementation of our interface which we can use to create a dependency graph.
 
-The Pushe core module defines a `CoreComponent` Component in the `core.dagger` package.
+The Hengam core module defines a `CoreComponent` Component in the `core.dagger` package.
 
 ```kotlin
 // core/dagger/CoreComponent.kt
@@ -99,9 +99,9 @@ interface CoreComponent {
 The name of the declared method is arbitraty. Dagger uses the return type of the method to know what object to create and return once the method is called.
 
 
-#### Pushe Service Module Components
+#### Hengam Service Module Components
 
-Each Pushe service module (see [Project Structure](/guide/structure)) should define it's own separate Dagger Component and should list the `CoreComponent` as a dependency. The Component interface should be placed in the `dagger` package of the related module.
+Each Hengam service module (see [Project Structure](/guide/structure)) should define it's own separate Dagger Component and should list the `CoreComponent` as a dependency. The Component interface should be placed in the `dagger` package of the related module.
 
 
 ```kotlin
@@ -145,15 +145,15 @@ awesome.awesomeStuff().doAwesomeStuff()
 Every service module Component should provide direct access methods in the interface for providing the following four classes:
 
 - **Context**: The Android Context class
-- **PusheMoshi**: The `PusheMoshi` class. This should be provided through the `moshi()` method.
+- **HengamMoshi**: The `HengamMoshi` class. This should be provided through the `moshi()` method.
 - **MessageDispatcher**: A `MessageDispatcher` for the module. See [Where To Register Message Handlers](/guide/receiving-message/#where-to-register-message-handlers)
-- **A PusheApi subclass**: If the module provides an API to the developer (see [Providing APIs for Developers](guide/receiving-message/#where-to-register-message-handlers)), it should be available in the Component interface through the `api()` method.
+- **A HengamApi subclass**: If the module provides an API to the developer (see [Providing APIs for Developers](guide/receiving-message/#where-to-register-message-handlers)), it should be available in the Component interface through the `api()` method.
 ```kotlin
 interface AwesomeComponent {
     fun context(): Context
-    fun moshi(): PusheMoshi
+    fun moshi(): HengamMoshi
     fun messageDispatcher(): MessageDispatcher()
-    fun api(): PusheAwesome
+    fun api(): HengamAwesome
 }
 ```
 
@@ -164,7 +164,7 @@ interface AwesomeComponent {
 In the [Dagger Basics](#dagger-basics) section we created a class `AwesomeStuff` and using the `@Inject` annotation we asked Dagger to provide this class to any other class which needs it as a dependency. By default, Dagger will create new instances of our class everytime it is needs to be passed to another class. However, sometimes we require several classes to share the same instance of a dependency. Or we may require that a single instance of the dependency exist throughout the application (i.e., a singleton class). This behaviour can be achieved using Dagger Scopes.
 
 !!! tip "@Singleton"
-    Dagger comes with a predefined scope `@Singleton` which could be used for defining singleton classes. However, we do not use this scope in Pushe. Instead, each component should define it's own custom scope as shown below.
+    Dagger comes with a predefined scope `@Singleton` which could be used for defining singleton classes. However, we do not use this scope in Hengam. Instead, each component should define it's own custom scope as shown below.
 
 
 Each service module should contains it's own custom Dagger scope, defined in it's `dagger` package.

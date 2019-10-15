@@ -1,16 +1,16 @@
 -keepattributes SourceFile,LineNumberTable
 -keepparameternames
 
--keepclassmembers enum co.pushe.plus.** { *; }
+-keepclassmembers enum io.hengam.lib.** { *; }
 
--keep class co.pushe.plus.internal.PusheComponentInitializer { *; } # This is needed so the one below works in consumer rules
--keep class * extends co.pushe.plus.internal.PusheComponentInitializer {
+-keep class io.hengam.lib.internal.HengamComponentInitializer { *; } # This is needed so the one below works in consumer rules
+-keep class * extends io.hengam.lib.internal.HengamComponentInitializer {
     public void preInitialize(android.content.Context);
     public void postInitialize(android.content.Context);
 }
 
-# Keep Pushe Tasks and it's members, this is needed for WorkManager to work
--keep class co.pushe.plus.** extends co.pushe.plus.internal.task.PusheTask { *; }
+# Keep Hengam Tasks and it's members, this is needed for WorkManager to work
+-keep class io.hengam.lib.** extends io.hengam.lib.internal.task.HengamTask { *; }
 
 -keep,allowobfuscation @interface com.squareup.moshi.ToJson
 -keep,allowobfuscation @interface com.squareup.moshi.FromJson
@@ -22,4 +22,4 @@
 # -keep class com.squareup.moshi.Moshi
 
 # Keep Exception names
--keepnames class co.pushe.plus.** extends java.lang.Exception
+-keepnames class io.hengam.lib.** extends java.lang.Exception

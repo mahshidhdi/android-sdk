@@ -7,7 +7,7 @@ apply plugin: 'com.github.triplet.play'
 android {
     compileSdkVersion 28
     defaultConfig {
-        applicationId "co.pushe.adminapp"
+        applicationId "io.hengam.adminapp"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 200009901
