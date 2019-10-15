@@ -31,7 +31,6 @@ buildscript {
             versionCode: 100004
         ]
 
-
         setup = [
                 compileSdk: 28,
                 minSdk    : 15,
