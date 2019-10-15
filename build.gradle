@@ -57,7 +57,7 @@ buildscript {
     }
 
     ext {
-        bintrayRepo = 'android-sdk'
+        bintrayRepo = 'hengam'
         publishedGroupId = 'io.hengam.lib'
         siteUrl = 'https://hengam.io'
         gitUrl = 'https://github.com/hengam-io/android-sdk'
