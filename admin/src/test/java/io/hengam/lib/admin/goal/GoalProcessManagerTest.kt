@@ -1,19 +1,25 @@
 package io.hengam.lib.admin.goal
 
+import android.app.Activity
 import android.support.v4.app.Fragment
 import android.widget.Button
 import android.widget.TextView
 import io.hengam.lib.admin.R
 import io.hengam.lib.admin.analytics.activities.MultipleFrameLayoutActivity
 import io.hengam.lib.admin.analytics.activities.SimpleActivity
+import io.hengam.lib.analytics.AppLifecycleListener
 import io.hengam.lib.analytics.GoalFragmentInfo
 import io.hengam.lib.analytics.SessionFragmentInfo
 import io.hengam.lib.analytics.ViewExtractor
 import io.hengam.lib.analytics.goal.*
 import io.hengam.lib.analytics.utils.getOnClickListener
 import io.hengam.lib.internal.HengamMoshi
-import io.hengam.lib.utils.test.TestUtils.turnOffThreadAssertions
+import io.hengam.lib.utils.rx.PublishRelay
+import io.hengam.lib.utils.test.TestUtils.mockCpuThread
 import io.mockk.*
+import io.reactivex.Completable
+import io.reactivex.Observable
+import io.reactivex.Single
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -23,8 +29,7 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class GoalProcessManagerTest {
-    private val sessionId = "some_id"
-
+    private val cpuThread = mockCpuThread()
     private val moshi = HengamMoshi()
 
     private val goalStore: GoalStore = mockk(relaxed = true)
@@ -32,16 +37,28 @@ class GoalProcessManagerTest {
     private val fragmentReachHandler: FragmentReachHandler = mockk(relaxed = true)
     private val buttonClickHandler: ButtonClickHandler = mockk(relaxed = true)
 
+    private val appLifecycleListener: AppLifecycleListener = mockk(relaxed = true)
+
+    private val activityResumeThrottler = PublishRelay.create<Activity>()
+    private val newActivityResumeThrottler = PublishRelay.create<Activity>()
+    private val fragmentResumeThrottler = PublishRelay.create<Pair<SessionFragmentInfo, Fragment>>()
+    private val newFragmentResumeThrottler = PublishRelay.create<Pair<SessionFragmentInfo, Fragment>>()
+    private val activityPauseThrottler = PublishRelay.create<Activity>()
+    private val fragmentPauseThrottler = PublishRelay.create<Pair<SessionFragmentInfo, Fragment>>()
+
     private lateinit var goalProcessManager: GoalProcessManager
 
     private lateinit var fragmentB: Fragment
     private val fragmentBInfo = SessionFragmentInfo(
             "FragmentB",
             "flContainer",
-            "MultipleFrameLayoutActivity")
-    private val fragmentBContainer = FragmentContainer("MultipleFrameLayoutActivity", "flContainer", listOf())
+            "MultipleFrameLayoutActivity",
+            parentFragment = null
+    )
 
     private lateinit var multipleFrameLayoutActivity: MultipleFrameLayoutActivity
+    private val simpleActivity = Robolectric.setupActivity(SimpleActivity::class.java)
+
 
     private fun initializeMultipleFrameLayoutActivityWithFragmentB() {
         multipleFrameLayoutActivity = Robolectric.setupActivity(MultipleFrameLayoutActivity::class.java)
@@ -54,151 +71,163 @@ class GoalProcessManagerTest {
 
         mockkObject(ViewExtractor)
 
-        turnOffThreadAssertions()
+        every { appLifecycleListener.onActivityResumed() } returns activityResumeThrottler
+        every { appLifecycleListener.onNewActivity() } returns newActivityResumeThrottler
+        every { appLifecycleListener.onFragmentResumed() } returns fragmentResumeThrottler
+        every { appLifecycleListener.onNewFragment() } returns newFragmentResumeThrottler
+        every { appLifecycleListener.onActivityPaused() } returns activityPauseThrottler
+        every { appLifecycleListener.onFragmentPaused() } returns fragmentPauseThrottler
 
-        goalProcessManager = spyk(
+        goalProcessManager =
                 GoalProcessManager(
-                        activityReachHandler,
-                        fragmentReachHandler,
-                        buttonClickHandler,
-                        goalStore,
-                        moshi
+                    appLifecycleListener,
+                    activityReachHandler,
+                    fragmentReachHandler,
+                    buttonClickHandler,
+                    goalStore,
+                    moshi
                 )
-        )
+
+        goalProcessManager.initialize()
     }
 
     @Test
-    fun manageActivityReachGoals_callsActivityReachedGoalHandlerIfThereIsAGoal_viewGoalsUpdated() {
+    fun onResumeOfNewActivity_CallsActivityReachedGoalHandlerIfThereIsAGoal_ViewGoalsUpdated__NoGoals() {
         // no goals defined
-        val simpleActivity = Robolectric.setupActivity(SimpleActivity::class.java)
+        every { goalStore.getActivityReachGoals("SimpleActivity") } returns Observable.empty()
+        newActivityResumeThrottler.accept(simpleActivity)
+        cpuThread.triggerActions()
 
-        every { goalStore.getActivityReachGoals("SimpleActivity") } returns listOf()
-        goalProcessManager.manageActivityReachGoals(simpleActivity, sessionId)
         verify(exactly = 1) { goalStore.getActivityReachGoals("SimpleActivity") }
         verify(exactly = 0) { goalStore.updateViewGoalValues(any(), simpleActivity) }
-        verify(exactly = 0) { activityReachHandler.onGoalReached(any(), sessionId) }
+        verify(exactly = 0) { activityReachHandler.onGoalReached(any()) }
+    }
 
+    @Test
+    fun onResumeOfNewActivity_CallsActivityReachedGoalHandlerIfThereIsAGoal_ViewGoalsUpdated__TwoGoals() {
         // multiple activityReachGoal for 'SimpleActivity'
-        every { goalStore.getActivityReachGoals("SimpleActivity") } returns listOf(
+        every { goalStore.getActivityReachGoals("SimpleActivity") } returns Observable.just(
                 firstActivityReachGoal,
                 firstActivityReachGoalWithDifferentName
         )
-        every { goalStore.updateViewGoalValues(any(), simpleActivity) } just runs
-        goalProcessManager.manageActivityReachGoals(simpleActivity, sessionId)
+        every { goalStore.updateViewGoalValues(any(), simpleActivity) } returns Completable.complete()
+        newActivityResumeThrottler.accept(simpleActivity)
+        cpuThread.triggerActions()
+
         verifyOrder {
             goalStore.getActivityReachGoals("SimpleActivity")
             goalStore.updateViewGoalValues(firstActivityReachGoal.viewGoalDataList, simpleActivity)
-            activityReachHandler.onGoalReached(firstActivityReachGoal, sessionId)
-            activityReachHandler.onGoalReached(firstActivityReachGoalWithDifferentName, sessionId)
+            activityReachHandler.onGoalReached(firstActivityReachGoal)
+            goalStore.updateViewGoalValues(firstActivityReachGoalWithDifferentName.viewGoalDataList, simpleActivity)
+            activityReachHandler.onGoalReached(firstActivityReachGoalWithDifferentName)
         }
+
+        verify(exactly = 1) { goalStore.getActivityReachGoals("SimpleActivity") }
+        verify(exactly = 2) { goalStore.updateViewGoalValues(any(), simpleActivity) }
+        verify(exactly = 2) { activityReachHandler.onGoalReached(any()) }
     }
 
     @Test
-    fun updateFragmentReachViewGoals_callsStoreToUpdateFragmentReachGoalViewGoalsIfAny() {
-        // no goals defined
+    fun onResumeOfNewFragment_callsFragmentReachedGoalHandlerIfThereIsAGoal_viewGoalsUpdated__NoGoals() {
         initializeMultipleFrameLayoutActivityWithFragmentB()
 
-        every { goalStore.getFragmentReachGoals(fragmentBInfo) } returns listOf()
-        goalProcessManager.updateFragmentReachViewGoals(fragmentBInfo, fragmentB)
+        // no goals defined
+        every { goalStore.getFragmentReachGoals(fragmentBInfo) } returns Observable.empty()
+        newFragmentResumeThrottler.accept(fragmentBInfo to fragmentB)
+
         verify(exactly = 1) { goalStore.getFragmentReachGoals(fragmentBInfo) }
         verify(exactly = 0) { goalStore.updateViewGoalValues(any(), fragmentB) }
+        verify(exactly = 0) { fragmentReachHandler.onGoalReached(any(), fragmentBInfo.containerId) }
+    }
+
+    @Test
+    fun onResumeOfNewFragment_callsFragmentReachedGoalHandlerIfThereIsAGoal_viewGoalsUpdated__WithGoals() {
+        initializeMultipleFrameLayoutActivityWithFragmentB()
 
         // multiple fragmentReachGoal for 'FragmentB'
-        every { goalStore.getFragmentReachGoals(fragmentBInfo) } returns listOf(
+        every { goalStore.getFragmentReachGoals(fragmentBInfo) } returns Observable.just(
                 fragmentBReachGoal,
                 fragmentBReachGoalWithDifferentName
         )
-        every { goalStore.updateViewGoalValues(any(), fragmentB) } just runs
-        goalProcessManager.updateFragmentReachViewGoals(fragmentBInfo, fragmentB)
+        every { goalStore.updateViewGoalValues(any(), fragmentB) } returns Completable.complete()
+        newFragmentResumeThrottler.accept(fragmentBInfo to fragmentB)
+
         verifyOrder {
             goalStore.getFragmentReachGoals(fragmentBInfo)
             goalStore.updateViewGoalValues(fragmentBReachGoal.viewGoalDataList, fragmentB)
+            fragmentReachHandler.onGoalReached(fragmentBReachGoal, fragmentBInfo.containerId)
+            goalStore.updateViewGoalValues(fragmentBReachGoalWithDifferentName.viewGoalDataList, fragmentB)
+            fragmentReachHandler.onGoalReached(fragmentBReachGoalWithDifferentName, fragmentBInfo.containerId)
         }
-    }
 
-    @Test
-    fun handleFragmentReachMessage_callsFragmentReachedGoalHandlerIfThereIsAGoal() {
-        // no goals defined
-        initializeMultipleFrameLayoutActivityWithFragmentB()
-
-        every { goalStore.getFragmentReachGoals(fragmentBInfo) } returns listOf()
-        goalProcessManager.handleFragmentReachMessage(fragmentBInfo, fragmentBContainer, sessionId)
         verify(exactly = 1) { goalStore.getFragmentReachGoals(fragmentBInfo) }
-        verify(exactly = 0) { fragmentReachHandler.onGoalReached(any(), fragmentBContainer, sessionId) }
-        verify(exactly = 0) { goalStore.updateViewGoalValues(any(), fragmentB) }
-
-        // multiple fragmentReachGoal for 'FragmentB'
-        every { goalStore.getFragmentReachGoals(fragmentBInfo) } returns listOf(
-                fragmentBReachGoal,
-                fragmentBReachGoalWithDifferentName
-        )
-        goalProcessManager.handleFragmentReachMessage(fragmentBInfo, fragmentBContainer, sessionId)
-        verify(exactly = 0) { goalStore.updateViewGoalValues(any(), fragmentB) }
-        verifyOrder {
-            goalStore.getFragmentReachGoals(fragmentBInfo)
-            fragmentReachHandler.onGoalReached(fragmentBReachGoal, fragmentBContainer, sessionId)
-            fragmentReachHandler.onGoalReached(fragmentBReachGoalWithDifferentName, fragmentBContainer, sessionId)
-        }
+        verify(exactly = 2) { goalStore.updateViewGoalValues(any(), fragmentB) }
+        verify(exactly = 2) { fragmentReachHandler.onGoalReached(any(), fragmentBInfo.containerId) }
     }
 
     @Test
-    fun manageActivityButtonClickGoals_setsButtonClickListenersForEachGoalButtonInActivity() {
-        val simpleActivity = Robolectric.setupActivity(SimpleActivity::class.java)
-
+    fun onResumeOfActivity_SetsButtonClickListenersForEachGoalButtonInActivity() {
         val firstTargetButton: Button = simpleActivity.findViewById(R.id.buttonTarget)
         val secondTargetButton: Button = simpleActivity.findViewById(R.id.buttonTarget2)
 
         // multiple buttonClickGoals for 'SimpleActivity'
-        every { goalStore.getButtonClickGoals("SimpleActivity") } returns listOf(
+        every { goalStore.getButtonClickGoals("SimpleActivity") } returns Observable.just(
                 firstButtonClickGoalSimpleActivity,
-                secondButtonClickGoalSimpleActivity)
-        every { goalStore.updateViewGoalValues(any(), simpleActivity) } just runs
+                secondButtonClickGoalSimpleActivity
+        )
+        every { goalStore.updateViewGoalValues(any(), simpleActivity) } returns Completable.complete()
 
-        goalProcessManager.manageButtonClickGoals(simpleActivity, sessionId)
+        activityResumeThrottler.accept(simpleActivity)
+        cpuThread.triggerActions()
 
         firstTargetButton.performClick()
+        cpuThread.triggerActions()
+
         verifyOrder {
             goalStore.updateViewGoalValues(firstButtonClickGoalSimpleActivity.viewGoalDataList, simpleActivity)
-            buttonClickHandler.onGoalReached(firstButtonClickGoalSimpleActivity, sessionId)
+            buttonClickHandler.onGoalReached(firstButtonClickGoalSimpleActivity)
         }
-        verify(exactly = 1) { buttonClickHandler.onGoalReached(firstButtonClickGoalSimpleActivity, sessionId) }
+        verify(exactly = 1) { buttonClickHandler.onGoalReached(firstButtonClickGoalSimpleActivity) }
 
         secondTargetButton.performClick()
+        cpuThread.triggerActions()
         verifyOrder {
             goalStore.updateViewGoalValues(listOf(), simpleActivity)
-            buttonClickHandler.onGoalReached(secondButtonClickGoalSimpleActivity, sessionId)
+            buttonClickHandler.onGoalReached(secondButtonClickGoalSimpleActivity)
         }
-        verify(exactly = 1) { buttonClickHandler.onGoalReached(secondButtonClickGoalSimpleActivity, sessionId) }
+        verify(exactly = 1) { buttonClickHandler.onGoalReached(secondButtonClickGoalSimpleActivity) }
     }
 
     @Test
-    fun manageFragmentButtonClickGoals_setsButtonClickListenersForEachGoalButtonInFragment() {
+    fun onResumeOfFragment_setsButtonClickListenersForEachGoalButtonInFragment() {
         initializeMultipleFrameLayoutActivityWithFragmentB()
 
         val firstTargetButton: Button = fragmentB.view!!.findViewById(R.id.buttonInnerTarget)
         val secondTargetButton: Button = fragmentB.view!!.findViewById(R.id.buttonInnerTarget2)
 
         // multiple buttonClickGoals inside FragmentB
-        every { goalStore.getButtonClickGoals(fragmentBInfo) } returns listOf(
+        every { goalStore.getButtonClickGoals(fragmentBInfo) } returns Observable.just(
                 firstButtonClickGoalFragmentB,
-                secondButtonClickGoalFragmentB)
-        every { goalStore.updateViewGoalValues(any(), fragmentB) } just runs
-
-        goalProcessManager.manageButtonClickGoals(fragmentBInfo, fragmentB, sessionId)
+                secondButtonClickGoalFragmentB
+        )
+        every { goalStore.updateViewGoalValues(any(), fragmentB) } returns Completable.complete()
+        fragmentResumeThrottler.accept(fragmentBInfo to fragmentB)
 
         firstTargetButton.performClick()
+        cpuThread.triggerActions()
         verifyOrder {
             goalStore.updateViewGoalValues(firstButtonClickGoalFragmentB.viewGoalDataList, fragmentB)
-            buttonClickHandler.onGoalReached(firstButtonClickGoalFragmentB, sessionId)
+            buttonClickHandler.onGoalReached(firstButtonClickGoalFragmentB)
         }
-        verify(exactly = 1) { buttonClickHandler.onGoalReached(firstButtonClickGoalFragmentB, sessionId) }
+        verify(exactly = 1) { buttonClickHandler.onGoalReached(firstButtonClickGoalFragmentB) }
 
         secondTargetButton.performClick()
+        cpuThread.triggerActions()
         verifyOrder {
             goalStore.updateViewGoalValues(listOf(), fragmentB)
-            buttonClickHandler.onGoalReached(secondButtonClickGoalFragmentB, sessionId)
+            buttonClickHandler.onGoalReached(secondButtonClickGoalFragmentB)
         }
-        verify(exactly = 1) { buttonClickHandler.onGoalReached(secondButtonClickGoalFragmentB, sessionId) }
+        verify(exactly = 1) { buttonClickHandler.onGoalReached(secondButtonClickGoalFragmentB) }
     }
 
     @Test
@@ -206,8 +235,8 @@ class GoalProcessManagerTest {
         val simpleActivity = Robolectric.setupActivity(SimpleActivity::class.java)
         val firstTargetButton: Button = simpleActivity.findViewById(R.id.buttonTarget)
 
-        every { goalStore.getButtonClickGoals("SimpleActivity") } returns listOf(firstButtonClickGoalSimpleActivity)
-        every { goalStore.updateViewGoalValues(any(), simpleActivity) } just runs
+        every { goalStore.getButtonClickGoals("SimpleActivity") } returns Observable.just(firstButtonClickGoalSimpleActivity)
+        every { goalStore.updateViewGoalValues(any(), simpleActivity) } returns Completable.complete()
 
         // setting a listener for the button
         val tvSample = simpleActivity.findViewById<TextView>(R.id.tvSample)
@@ -216,12 +245,15 @@ class GoalProcessManagerTest {
             tvSample.text = "After Clicking Button"
         }
 
-        goalProcessManager.manageButtonClickGoals(simpleActivity, sessionId)
+        activityResumeThrottler.accept(simpleActivity)
+        cpuThread.triggerActions()
+
         assertEquals("Before Clicking Button", tvSample.text)
         firstTargetButton.performClick()
+        cpuThread.triggerActions()
 
         assertEquals("After Clicking Button", tvSample.text)
-        verify(exactly = 1) { buttonClickHandler.onGoalReached(firstButtonClickGoalSimpleActivity, sessionId) }
+        verify(exactly = 1) { buttonClickHandler.onGoalReached(firstButtonClickGoalSimpleActivity) }
     }
 
     @Test
@@ -230,8 +262,8 @@ class GoalProcessManagerTest {
 
         val firstTargetButton: Button = fragmentB.view!!.findViewById(R.id.buttonInnerTarget)
 
-        every { goalStore.getButtonClickGoals(fragmentBInfo) } returns listOf(firstButtonClickGoalFragmentB)
-        every { goalStore.updateViewGoalValues(any(), fragmentB) } just runs
+        every { goalStore.getButtonClickGoals(fragmentBInfo) } returns Observable.just(firstButtonClickGoalFragmentB)
+        every { goalStore.updateViewGoalValues(any(), fragmentB) } returns Completable.complete()
 
         // setting a listener for the button
         val tvSample = fragmentB.view!!.findViewById<TextView>(R.id.tvSample)
@@ -240,12 +272,14 @@ class GoalProcessManagerTest {
             tvSample.text = "After Clicking Button"
         }
 
-        goalProcessManager.manageButtonClickGoals(fragmentBInfo, fragmentB, sessionId)
+        fragmentResumeThrottler.accept(fragmentBInfo to fragmentB)
+
         assertEquals("Before Clicking Button", tvSample.text)
         firstTargetButton.performClick()
+        cpuThread.triggerActions()
 
         assertEquals("After Clicking Button", tvSample.text)
-        verify(exactly = 1) { buttonClickHandler.onGoalReached(firstButtonClickGoalFragmentB, sessionId) }
+        verify(exactly = 1) { buttonClickHandler.onGoalReached(firstButtonClickGoalFragmentB) }
     }
 
     @Test
@@ -253,8 +287,8 @@ class GoalProcessManagerTest {
         val simpleActivity = Robolectric.setupActivity(SimpleActivity::class.java)
         val firstTargetButton: Button = simpleActivity.findViewById(R.id.buttonTarget)
 
-        every { goalStore.getButtonClickGoals("SimpleActivity") } returns listOf(firstButtonClickGoalSimpleActivity)
-        every { goalStore.updateViewGoalValues(any(), simpleActivity) } just runs
+        every { goalStore.getButtonClickGoals("SimpleActivity") } returns Observable.just(firstButtonClickGoalSimpleActivity)
+        every { goalStore.updateViewGoalValues(any(), simpleActivity) } returns Completable.complete()
 
         // setting a listener for the button
         val tvSample = simpleActivity.findViewById<TextView>(R.id.tvSample)
@@ -264,14 +298,17 @@ class GoalProcessManagerTest {
         }
 
         // multiple calls to setClickListener
-        goalProcessManager.manageButtonClickGoals(simpleActivity, sessionId)
-        goalProcessManager.manageButtonClickGoals(simpleActivity, sessionId)
-        goalProcessManager.manageButtonClickGoals(simpleActivity, sessionId)
+        activityResumeThrottler.accept(simpleActivity)
+        activityResumeThrottler.accept(simpleActivity)
+        activityResumeThrottler.accept(simpleActivity)
+        cpuThread.triggerActions()
+
         assertEquals("Before Clicking Button", tvSample.text)
         firstTargetButton.performClick()
+        cpuThread.triggerActions()
 
         assertEquals("After Clicking Button", tvSample.text)
-        verify(exactly = 1) { buttonClickHandler.onGoalReached(firstButtonClickGoalSimpleActivity, sessionId) }
+        verify(exactly = 1) { buttonClickHandler.onGoalReached(firstButtonClickGoalSimpleActivity) }
     }
 
     @Test
@@ -280,8 +317,8 @@ class GoalProcessManagerTest {
 
         val firstTargetButton: Button = fragmentB.view!!.findViewById(R.id.buttonInnerTarget)
 
-        every { goalStore.getButtonClickGoals(fragmentBInfo) } returns listOf(firstButtonClickGoalFragmentB)
-        every { goalStore.updateViewGoalValues(any(), fragmentB) } just runs
+        every { goalStore.getButtonClickGoals(fragmentBInfo) } returns Observable.just(firstButtonClickGoalFragmentB)
+        every { goalStore.updateViewGoalValues(any(), fragmentB) } returns Completable.complete()
 
         // setting a listener for the button
         val tvSample = fragmentB.view!!.findViewById<TextView>(R.id.tvSample)
@@ -291,14 +328,16 @@ class GoalProcessManagerTest {
         }
 
         // multiple calls to setClickListener
-        goalProcessManager.manageButtonClickGoals(fragmentBInfo, fragmentB, sessionId)
-        goalProcessManager.manageButtonClickGoals(fragmentBInfo, fragmentB, sessionId)
-        goalProcessManager.manageButtonClickGoals(fragmentBInfo, fragmentB, sessionId)
+        fragmentResumeThrottler.accept(fragmentBInfo to fragmentB)
+        fragmentResumeThrottler.accept(fragmentBInfo to fragmentB)
+        fragmentResumeThrottler.accept(fragmentBInfo to fragmentB)
+
         assertEquals("Before Clicking Button", tvSample.text)
         firstTargetButton.performClick()
+        cpuThread.triggerActions()
 
         assertEquals("After Clicking Button", tvSample.text)
-        verify(exactly = 1) { buttonClickHandler.onGoalReached(firstButtonClickGoalFragmentB, sessionId) }
+        verify(exactly = 1) { buttonClickHandler.onGoalReached(firstButtonClickGoalFragmentB) }
     }
 
     @Test
@@ -307,13 +346,13 @@ class GoalProcessManagerTest {
 
         mockkStatic("io.hengam.lib.analytics.utils.GetOnClickListenerKt")
 
-        every { goalStore.getButtonClickGoals("SimpleActivity") } returns listOf(firstButtonClickGoalSimpleActivity)
-        every { goalStore.updateViewGoalValues(any(), simpleActivity) } just runs
+        every { goalStore.getButtonClickGoals("SimpleActivity") } returns Observable.just(firstButtonClickGoalSimpleActivity)
 
         val textView = simpleActivity.findViewById<TextView>(R.id.tvSample)
+        every { ViewExtractor.extractView(any(), simpleActivity) } returns Single.just(textView)
 
-        // multiple calls to setClickListener
-        goalProcessManager.manageButtonClickGoals(simpleActivity, sessionId)
+        activityResumeThrottler.accept(simpleActivity)
+        cpuThread.triggerActions()
         verify(exactly = 0) { getOnClickListener(textView) }
     }
 
@@ -323,44 +362,37 @@ class GoalProcessManagerTest {
 
         mockkStatic("io.hengam.lib.analytics.utils.GetOnClickListenerKt")
 
-        every { goalStore.getButtonClickGoals(fragmentBInfo) } returns listOf(firstButtonClickGoalFragmentB)
-        every { goalStore.updateViewGoalValues(any(), fragmentB) } just runs
+        every { goalStore.getButtonClickGoals(fragmentBInfo) } returns Observable.just(firstButtonClickGoalFragmentB)
 
         val textView = fragmentB.view!!.findViewById<TextView>(R.id.tvSample)
+        every { ViewExtractor.extractView(any(), fragmentB) } returns Single.just(textView)
 
-        // multiple calls to setClickListener
-        goalProcessManager.manageButtonClickGoals(fragmentBInfo, fragmentB, sessionId)
+        fragmentResumeThrottler.accept(fragmentBInfo to fragmentB)
+
         verify(exactly = 0) { getOnClickListener(textView) }
     }
 
     @Test
-    fun updateActivityViewGoals_callsStoreToUpdateActivityViewGoalValues() {
-        val simpleActivity = Robolectric.setupActivity(SimpleActivity::class.java)
+    fun onPauseOfActivity_callsStoreToUpdateActivityViewGoalValues() {
+        every { goalStore.viewGoalsByActivity("SimpleActivity") } returns Observable.fromIterable(viewGoalDataList_simpleActivity)
+        activityPauseThrottler.accept(simpleActivity)
+        cpuThread.triggerActions()
 
-        // no viewGoals in the activity
-        every { goalStore.viewGoalsByActivity("SimpleActivity") } returns listOf()
-        goalProcessManager.updateActivityViewGoals(simpleActivity)
-        verify(exactly = 0) { goalStore.updateViewGoalValues(any(), simpleActivity) }
-
-        // some viewGoals in the activity!!
-        every { goalStore.viewGoalsByActivity("SimpleActivity") } returns viewGoalDataList_simpleActivity
-        goalProcessManager.updateActivityViewGoals(simpleActivity)
-        verify(exactly = 1) { goalStore.updateViewGoalValues(viewGoalDataList_simpleActivity, simpleActivity) }
+        viewGoalDataList_simpleActivity.forEach {
+            verify(exactly = 1) { goalStore.updateViewGoalValues(listOf(it), simpleActivity) }
+        }
     }
 
     @Test
-    fun updateFragmentViewGoals_callsStoreToUpdateFragmentViewGoalValues() {
+    fun onPauseOfFragment_callsStoreToUpdateFragmentViewGoalValues() {
         initializeMultipleFrameLayoutActivityWithFragmentB()
 
-        // no viewGoals in the fragment
-        every { goalStore.viewGoalsByFragment(fragmentBInfo) } returns listOf()
-        goalProcessManager.updateFragmentViewGoals(fragmentBInfo, fragmentB)
-        verify(exactly = 0) { goalStore.updateViewGoalValues(any(), fragmentB) }
+        every { goalStore.viewGoalsByFragment(fragmentBInfo) } returns Observable.fromIterable(viewGoalDataList_fragmentB)
 
-        // some viewGoals in the fragment!!
-        every { goalStore.viewGoalsByFragment(fragmentBInfo) } returns viewGoalDataList_fragmentB
-        goalProcessManager.updateFragmentViewGoals(fragmentBInfo, fragmentB)
-        verify(exactly = 1) { goalStore.updateViewGoalValues(viewGoalDataList_fragmentB, fragmentB) }
+        fragmentPauseThrottler.accept(fragmentBInfo to fragmentB)
+        viewGoalDataList_fragmentB.forEach {
+            verify(exactly = 1) { goalStore.updateViewGoalValues(listOf(it), fragmentB) }
+        }
     }
 }
 
@@ -379,7 +411,7 @@ private val firstActivityReachGoal = ActivityReachGoalData(
                 activityClassName = "SimpleActivity",
                 parentGoalName = "firstActivityReachGoal"
         )
-)
+    )
 )
 
 private val firstActivityReachGoalWithDifferentName = ActivityReachGoalData(

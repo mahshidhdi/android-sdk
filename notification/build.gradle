@@ -61,6 +61,8 @@ ext {
     bintrayName = 'hengam-notif'
     libraryName = "HengamNotification"
     libraryDescription = "Hengam Plus Notification module"
+    uploadSources = true
 }
 
 apply from : "$rootProject.projectDir/bintray-android.gradle"
+apply from : "$rootProject.projectDir/publish.gradle"

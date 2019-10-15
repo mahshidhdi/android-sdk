@@ -32,8 +32,7 @@ class CollectionController @Inject constructor(
     private fun immediateCollection(collectable: Collectable, message: ScheduleCollectionMessage) {
         collectorExecutor.collectAndSend(
                 collectable,
-                getCollectionSendPriority(message),
-                finalAttempt = true
+                getCollectionSendPriority(message)
         ).subscribeBy(onError = {
             Plog.warn.message("Immediate data collection failed for ${collectable.id}").withTag(T_DATALYTICS).useLogCatLevel(LogLevel.DEBUG).log()
         })

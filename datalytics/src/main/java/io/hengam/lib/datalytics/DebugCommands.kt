@@ -11,6 +11,7 @@ import io.hengam.lib.datalytics.messages.downstream.GeofenceMessage
 import io.hengam.lib.datalytics.messages.upstream.AppInstallMessage
 import io.hengam.lib.datalytics.messages.upstream.AppInstallMessageBuilder
 import io.hengam.lib.datalytics.tasks.InstallDetectorTask
+import io.hengam.lib.datalytics.tasks.scheduleLocationCollection
 import io.hengam.lib.internal.DebugCommandProvider
 import io.hengam.lib.internal.DebugInput
 import io.hengam.lib.internal.HengamConfig
@@ -21,6 +22,7 @@ import io.hengam.lib.messaging.SendPriority
 import io.hengam.lib.utils.*
 import io.hengam.lib.utils.log.Plog
 import io.hengam.lib.utils.rx.justDo
+import io.hengam.lib.utils.rx.subscribeBy
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -69,7 +71,11 @@ class DebugCommands @Inject constructor(
                             ),
                             "Geofence" to mapOf(
                                     "Print Registered Geofences" to "data_geofences_print",
-                                    "Re-register Geofences" to "data_geofences_reregister"
+                                    "Re-register Geofences" to "data_geofences_reregister",
+                                    "Register New Geofence" to "data_new_geofence_register",
+                                    "Remove Geofence" to "remove_geofence",
+                                    "Schedule Location Collection" to "collect_locations",
+                                    "Stop Location Collection" to "stop_location_collection"
                             )
                     )
             )
@@ -191,6 +197,46 @@ class DebugCommands @Inject constructor(
             }
             "data_geofences_reregister" -> {
                 geofenceManager.ensureGeofencesAreRegistered().justDo(T_DATALYTICS, T_GEOFENCE, T_DEBUG)
+            }
+            "data_new_geofence_register" -> {
+                input.prompt("Add New Geofence", "Geofence", "hengamGeo,35.7050026,51.35218868,500,enter")
+                    .subscribeBy { geo ->
+                        val config = geo.split(",")
+                        geofenceManager.addOrUpdateGeofence(GeofenceMessage(
+                            id = config[0],
+                            lat = config[1].toDouble(),
+                            long = config[2].toDouble(),
+                            radius = config[3].toFloat(),
+                            messageId = IdGenerator.generateId(),
+                            message = mapOf("t1" to mapOf(
+                                "title" to "GeofenceTest",
+                                "content" to "${config[4]}ing the Geofence ${config[0]} with location {Lat: ${config[1]} | Long: ${config[2]}}",
+                                "allow_multi_publish" to true
+                            )),
+                            trigger = when(config[4]){
+                                "exit" -> 2
+                                else -> 1
+                            }
+                        ))
+                    }
+            }
+            "remove_geofence" -> {
+                input.prompt("Remove Geofence", "Geofence Id", "hengamGeo")
+                    .subscribeBy { geo ->
+                        geofenceManager.removeGeofence(geo)
+                    }
+            }
+            "collect_locations" -> {
+                input.prompt("Schedule Location Updates", "Interval(in_Minutes)", "60")
+                    .subscribeBy { interval ->
+                        hengamConfig.updateConfig("location_collection_enabled", true)
+                        hengamConfig.updateConfig("location_collection_interval", interval.toLong())
+                        scheduleLocationCollection()
+                    }
+            }
+            "stop_location_collection" -> {
+                hengamConfig.updateConfig("location_collection_enabled", false)
+                scheduleLocationCollection()
             }
             else -> return false
         }

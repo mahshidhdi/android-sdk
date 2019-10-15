@@ -1,4 +1,6 @@
 -keepclassmembers enum io.hengam.lib.** { *; }
+-keepclassmembers enum androidx.work.** { *; }
+
 -keep class * extends io.hengam.lib.internal.HengamComponentInitializer {
     public void preInitialize(android.content.Context);
     public void postInitialize(android.content.Context);
@@ -6,6 +8,8 @@
 -keep class io.hengam.lib.internal.HengamInitializer { *; }
 
 -keep class io.hengam.lib.** extends io.hengam.lib.internal.task.HengamTask { *; }
+
+-optimizations !class/unboxing/enum
 
 # -- Moshi --
 -dontwarn okio.**

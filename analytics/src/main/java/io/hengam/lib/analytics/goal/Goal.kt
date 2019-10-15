@@ -1,9 +1,14 @@
 package io.hengam.lib.analytics.goal
 
+import android.view.View
+import android.widget.Button
+import android.widget.Switch
+import android.widget.TextView
 import io.hengam.lib.utils.moshi.RuntimeJsonAdapterFactory
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.JsonClass
+import kotlin.reflect.KClass
 
 enum class GoalType {
     @Json(name = "activity_reach") ACTIVITY_REACH,
@@ -129,11 +134,11 @@ class GoalMessageFragmentInfo (
     }
 }
 
-enum class ViewGoalType {
-    @Json(name = "text") TEXT_VIEW,
-    @Json(name = "switch") SWITCH,
-    @Json(name = "button") BUTTON,
-    @Json(name = "list") LIST
+enum class ViewGoalType(val type: KClass<out View>) {
+    @Json(name = "text") TEXT_VIEW (TextView::class),
+    @Json(name = "switch") SWITCH (Switch::class)
+//    @Json(name = "button") BUTTON (Button::class)
+//    @Json(name = "list") LIST
 }
 
 @JsonClass(generateAdapter = true)
@@ -165,7 +170,13 @@ data class ViewGoal (
         return result
     }
 
-    companion object
+    companion object {
+        fun isValidView(view: View): Boolean{
+            return ViewGoalType.values().any {
+                it.type.javaObjectType.isAssignableFrom(view.javaClass)
+            }
+        }
+    }
 }
 
 object GoalFactory {

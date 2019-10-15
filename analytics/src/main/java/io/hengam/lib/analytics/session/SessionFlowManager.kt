@@ -1,30 +1,41 @@
 package io.hengam.lib.analytics.session
 
 import android.support.annotation.VisibleForTesting
+import io.hengam.lib.HengamLifecycle
 import io.hengam.lib.analytics.*
 import io.hengam.lib.analytics.LogTag.T_ANALYTICS
 import io.hengam.lib.analytics.LogTag.T_ANALYTICS_SESSION
 import io.hengam.lib.analytics.dagger.AnalyticsScope
 import io.hengam.lib.analytics.goal.Funnel
-import io.hengam.lib.analytics.messages.downstream.FragmentFlowInfo
-import io.hengam.lib.analytics.messages.downstream.SessionFragmentFlowConfigMessage
 import io.hengam.lib.analytics.messages.upstream.SessionInfoMessageBuilder
+import io.hengam.lib.analytics.tasks.SessionEndDetectorTask
 import io.hengam.lib.analytics.utils.CurrentTimeGenerator
 import io.hengam.lib.internal.HengamConfig
+import io.hengam.lib.internal.cpuThread
+import io.hengam.lib.internal.task.TaskScheduler
 import io.hengam.lib.messaging.PostOffice
 import io.hengam.lib.messaging.SendPriority
-import io.hengam.lib.utils.*
+import io.hengam.lib.utils.ApplicationInfoHelper
+import io.hengam.lib.utils.PersistedList
+import io.hengam.lib.utils.HengamStorage
 import io.hengam.lib.utils.log.Plog
+import io.hengam.lib.utils.rx.justDo
+import io.reactivex.Completable
+import io.reactivex.Single
 import javax.inject.Inject
 
 
 @AnalyticsScope
 class SessionFlowManager @Inject constructor (
-        private val currentTimeGenerator: CurrentTimeGenerator,
-        private val postOffice: PostOffice,
-        private val hengamConfig: HengamConfig,
-        applicationInfoHelper: ApplicationInfoHelper,
-        hengamStorage: HengamStorage
+    private val currentTimeGenerator: CurrentTimeGenerator,
+    private val postOffice: PostOffice,
+    private val hengamConfig: HengamConfig,
+    private val hengamLifecycle: HengamLifecycle,
+    private val taskScheduler: TaskScheduler,
+    private val appLifecycleListener: AppLifecycleListener,
+    private val sessionIdProvider: SessionIdProvider,
+    applicationInfoHelper: ApplicationInfoHelper,
+    hengamStorage: HengamStorage
 ) {
 
     private val appVersionCode = applicationInfoHelper.getApplicationVersionCode() ?: 0
@@ -39,132 +50,231 @@ class SessionFlowManager @Inject constructor (
      * Each sessionFragment itself has such a map named fragmentFlows to support nested fragments in the session
      *
      */
+    @VisibleForTesting
     val sessionFlow: PersistedList<SessionActivity> = hengamStorage.createStoredList(
             "user_session_flow",
             SessionActivity::class.java
     )
 
-    var sessionId by hengamStorage.storedString("user_session_id", IdGenerator.generateId(
-        SESSION_ID_LENGTH))
-        private set
-
-    fun endSession() {
-        assertCpuThread()
-        Plog.info(T_ANALYTICS, T_ANALYTICS_SESSION, "User session ended",
-            "Id" to sessionId,
-            "Flow" to sessionFlow
-        )
-
-        sendLastActivitySessionFlowItemMessage()
-
-        sessionFlow.clear()
-        sessionId = IdGenerator.generateId(SESSION_ID_LENGTH)
-
-        Funnel.activityFunnel.clear()
-    }
-
-    /**
-     * Called when an activity is paused (@link [AppLifecycleListener.onActivityPaused])
-     */
-    fun updateActivityDuration(activityName: String){
-        assertCpuThread()
-
-        if (sessionFlow.isEmpty()) {
-            Plog.error(T_ANALYTICS, T_ANALYTICS_SESSION, "Updating activity's duration in session, sessionFlow is empty",
-                "Activity" to activityName
-            )
-            return
-        }
-
-        if (sessionFlow.last().name != activityName) {
-            Plog.error(T_ANALYTICS, T_ANALYTICS_SESSION, "Updating activity's duration in session, wrong value as last seen activity in sessionFlow",
-                "Expected last seen activity" to activityName,
-                "last activity in session" to sessionFlow.last().name
-            )
-        } else {
-            sessionFlow.last().duration +=
-                    currentTimeGenerator.getCurrentTime() - sessionFlow.last().startTime
-            sessionFlow.save()
-        }
-    }
-
-    /**
-     * Called when a fragment is paused (@link [AppLifecycleListener.onFragmentPaused])
-     * If the fragment is not supposed to be in the sessionFlow message (it is disabled), does not do anything
-     */
-    fun updateFragmentDuration(sessionFragmentInfo: SessionFragmentInfo, parentFragments: List<SessionFragmentInfo>){
-        assertCpuThread()
-
-        if (!shouldBeAddedToSession(sessionFragmentInfo, parentFragments.size)){
-            return
-        }
-
-        val fragmentParent = getFragmentSessionParent(sessionFlow, parentFragments)
-
-        if (fragmentParent != null) {
-            val fragmentContainerFlow: MutableList<SessionFragment>? =
-                fragmentParent.fragmentFlows[sessionFragmentInfo.fragmentId]
-
-            if (fragmentContainerFlow == null || fragmentContainerFlow.isEmpty()) {
-                Plog.error(T_ANALYTICS, T_ANALYTICS_SESSION, "Updating fragment's duration in session, null or empty fragmentFlow",
-                    "Activity" to sessionFragmentInfo.activityName,
-                    "Id" to sessionFragmentInfo.fragmentId
+    fun endSession(): Completable {
+        return sendLastActivitySessionFlowItemMessage()
+            .doOnSubscribe {
+                Plog.info(T_ANALYTICS, T_ANALYTICS_SESSION, "User session ended",
+                    "Id" to sessionIdProvider.sessionId,
+                    "Flow" to sessionFlow
                 )
-                return
+            }.doOnComplete {
+                sessionFlow.clear()
+                sessionIdProvider.renewSessionId()
+                Funnel.activityFunnel.clear()
             }
+    }
 
-            if (fragmentContainerFlow.last().name != sessionFragmentInfo.fragmentName) {
-                Plog.error(T_ANALYTICS, T_ANALYTICS_SESSION, "Updating fragment's duration in session, wrong value as last seen fragment in fragmentFlow",
-                    "Expected last seen fragment" to sessionFragmentInfo.fragmentName,
-                    "Current" to fragmentContainerFlow.last().name
+    fun initializeSessionFlow() {
+        appLifecycleListener.onNewActivity()
+            .observeOn(cpuThread())
+            .flatMapCompletable { activity ->
+                sendLastActivitySessionFlowItemMessage()
+                    .andThen(updateFunnel(activity.javaClass.simpleName))
+                    .doOnComplete {
+                        Plog.debug(T_ANALYTICS_SESSION, "Reached a new activity in session",
+                            "Session Id" to sessionIdProvider.sessionId,
+                            "Activity" to Funnel.activityFunnel.last()
+                        )
+                    }
+                    .doOnError {
+                        Plog.error(T_ANALYTICS_SESSION, "Error trying to update activity funnel on new activity resume", it,
+                            "Session Id" to sessionIdProvider.sessionId,
+                            *((it as? AnalyticsException)?.data ?: emptyArray())
+                        )
+                    }
+                    .onErrorComplete()
+            }
+            .justDo()
+
+
+        appLifecycleListener.onActivityResumed()
+            .observeOn(cpuThread())
+            .flatMapCompletable { activity ->
+                updateSessionFlow(
+                    activity.javaClass.simpleName,
+                    activity.intent.getStringExtra(ACTIVITY_EXTRA_NOTIF_MESSAGE_ID)
                 )
-                return
+                    .doOnComplete {
+                        Plog.trace(T_ANALYTICS_SESSION, "SessionFlow was updated due to activity resume",
+                            "Session Id" to sessionIdProvider.sessionId,
+                            "Last Activity" to sessionFlow.last().name
+                        )
+                    }
+                    .doOnError {
+                        Plog.error(T_ANALYTICS_SESSION, "Error trying to update session flow on activity resume", it,
+                            "Session Id" to sessionIdProvider.sessionId,
+                            *((it as? AnalyticsException)?.data ?: emptyArray())
+                        )
+                    }
+                    .onErrorComplete()
             }
+            .justDo()
 
-            fragmentContainerFlow.last().duration += (currentTimeGenerator.getCurrentTime()
-                            - (fragmentContainerFlow.last().startTime))
-            sessionFlow.save()
+
+        appLifecycleListener.onNewFragment()
+            .observeOn(cpuThread())
+            .flatMapCompletable { (sessionFragmentInfo, _) ->
+                updateFunnel(sessionFragmentInfo)
+                    .doOnComplete {
+                        Plog.debug(T_ANALYTICS_SESSION, "Reached a new fragment in session",
+                            "Session Id" to sessionIdProvider.sessionId,
+                            "Fragment" to sessionFragmentInfo.fragmentName
+                        )
+                    }
+                    .doOnError {
+                        Plog.error(T_ANALYTICS_SESSION, "Error trying to update funnel on new fragment resume", it,
+                            "Session Id" to sessionIdProvider.sessionId,
+                            "Fragment" to sessionFragmentInfo.fragmentName,
+                            *((it as? AnalyticsException)?.data ?: emptyArray())
+                        )
+                    }
+                    .onErrorComplete()
+            }
+            .justDo()
+
+
+        appLifecycleListener.onFragmentResumed()
+            .observeOn(cpuThread())
+            .flatMapCompletable { (sessionFragmentInfo, _) ->
+                updateSessionFlow(sessionFragmentInfo)
+                    .doOnComplete {
+                        Plog.trace(T_ANALYTICS_SESSION, "SessionFlow was updated due to fragment resume",
+                            "Session Id" to sessionIdProvider.sessionId,
+                            "Fragment" to sessionFragmentInfo.fragmentName
+                        )
+                    }
+                    .doOnError {
+                        Plog.error(T_ANALYTICS_SESSION, "Error trying to update session flow on fragment resume", it,
+                            "Session Id" to sessionIdProvider.sessionId,
+                            "Fragment" to sessionFragmentInfo.fragmentName,
+                            *((it as? AnalyticsException)?.data ?: emptyArray())
+                        )
+                    }
+                    .onErrorComplete()
+            }
+            .justDo()
+
+        appLifecycleListener.onActivityPaused()
+            .observeOn(cpuThread())
+            .flatMapCompletable { activity ->
+                updateActivityDuration(activity.javaClass.simpleName)
+                    .doOnComplete {
+                        Plog.trace(T_ANALYTICS_SESSION, "Activity duration was updated in the sessionFlow",
+                            "Session Id" to sessionIdProvider.sessionId,
+                            "Activity" to sessionFlow.last().name,
+                            "Duration" to sessionFlow.last().duration
+                        )
+                    }
+                    .doOnError {
+                        Plog.error(T_ANALYTICS_SESSION, "Error trying to update activity duration in sessionFlow", it,
+                            "Session Id" to sessionIdProvider.sessionId,
+                            *((it as? AnalyticsException)?.data ?: emptyArray())
+                        )
+                    }
+                    .onErrorComplete()
+            }
+            .justDo()
+
+        appLifecycleListener.onFragmentPaused()
+            .observeOn(cpuThread())
+            .flatMapCompletable { (sessionFragmentInfo, _) ->
+                updateFragmentDuration(sessionFragmentInfo)
+                    .doOnComplete {
+                        Plog.trace(T_ANALYTICS_SESSION, "Fragment duration was updated in the sessionFlow",
+                            "Session Id" to sessionIdProvider.sessionId,
+                            "Fragment" to sessionFragmentInfo.fragmentName
+                        )
+                    }
+                    .doOnError {
+                        Plog.error(T_ANALYTICS_SESSION, "Error trying to update fragment duration in sessionFlow", it,
+                            "Session Id" to sessionIdProvider.sessionId,
+                            "Fragment" to sessionFragmentInfo.fragmentName,
+                            *((it as? AnalyticsException)?.data ?: emptyArray())
+                        )
+                    }
+                    .onErrorComplete()
+            }
+            .justDo()
+    }
+
+    private fun updateFunnel(activityName: String): Completable {
+        return Completable.fromCallable {
+            Funnel.fragmentFunnel = mutableMapOf()
+            Funnel.activityFunnel.add(activityName)
+        }
+    }
+
+    private fun updateFunnel(fragmentInfo: SessionFragmentInfo): Completable {
+        return Completable.fromCallable {
+            Funnel.fragmentFunnel[fragmentInfo.containerId]?.add(fragmentInfo.fragmentName)
+                ?: Funnel.fragmentFunnel.put(fragmentInfo.containerId, mutableListOf(fragmentInfo.fragmentName))
         }
     }
 
     /**
-     * Called when an activity is resumed (@link [AppLifecycleListener.onActivityResumed])
+     * Called when an activity is resumed
      *
      * If the activity is the same one as last activity in session (there has not been a layout change)
      * sets the startTime of the [SessionActivity] to be current time.
      *
      * If the activity is a new one, builds a new [SessionActivity] and adds it to [sessionFlow]
      */
-    fun updateSessionFlow(activityName: String, notifMessageId: String? = null){
-        assertCpuThread()
-
-        if (sessionFlow.isEmpty() || sessionFlow.last().name != activityName) {
-            val sessionActivity = SessionActivity(
-                name = activityName,
-                startTime = currentTimeGenerator.getCurrentTime(),
-                originalStartTime = currentTimeGenerator.getCurrentTime(),
-                duration = 0,
-                sourceNotifMessageId = notifMessageId
-            )
-            sessionFlow.add(sessionActivity)
-        } else if (sessionFlow.last().name == activityName) {
-            sessionFlow.last().startTime = currentTimeGenerator.getCurrentTime()
-            sessionFlow.save()
+    private fun updateSessionFlow(activityName: String, notifMessageId: String? = null): Completable {
+        return Completable.fromCallable {
+            if (sessionFlow.isEmpty() || sessionFlow.last().name != activityName) {
+                val sessionActivity = SessionActivity(
+                    name = activityName,
+                    startTime = currentTimeGenerator.getCurrentTime(),
+                    originalStartTime = currentTimeGenerator.getCurrentTime(),
+                    duration = 0,
+                    sourceNotifMessageId = notifMessageId
+                )
+                sessionFlow.add(sessionActivity)
+            } else if (sessionFlow.last().name == activityName) {
+                sessionFlow.last().startTime = currentTimeGenerator.getCurrentTime()
+                sessionFlow.save()
+            } else Completable.complete()
         }
     }
 
     /**
-     * Called when a fragment is resumed (@link [AppLifecycleListener.onFragmentResumed])
+     * Called when an activity is paused to update its duration in session flow
+     */
+    private fun updateActivityDuration(activityName: String): Completable {
+        return when {
+            sessionFlow.isEmpty() ->
+                Completable.error(AnalyticsException("SessionFlow is empty",
+                    "Activity Name" to activityName
+                ))
+            sessionFlow.last().name != activityName ->
+                Completable.error(AnalyticsException("Wrong value as last seen activity in sessionFlow",
+                    "Expected Last Seen Activity" to activityName,
+                    "Last Activity In Session" to sessionFlow.last().name
+                ))
+            else ->
+                Completable.fromCallable {
+                    sessionFlow.last().duration +=
+                        currentTimeGenerator.getCurrentTime() - sessionFlow.last().startTime
+                    sessionFlow.save()
+                }
+        }
+    }
+
+
+    /**
+     * Called when a fragment is resumed
      *
      * Note: When a layout with nested fragments is reached, the order of calling lifeCycle callbacks
-     * for the fragments is from inner fragment to outer one. So in order to have a correct flow order
-     * for the fragments, before adding a fragment to session, we need to add its parent fragments first.
+     * for the fragments is from the inner fragment to the outer one. So in order to have a correct flow
+     * for the fragments, before adding a fragment to session, we need to add its parent fragments.
      *
-     * If the fragment is not a parent, first adds its enabled parent fragments to session. (@see [addParentFragments])
-     * If the fragment is a parent, its parents have already been added to session when adding its child fragments
-     *
-     * If the fragment is not supposed to be in the sessionFlow message (it is disabled), just adds
-     * its enabled parents to the session
+     * To do so the method is recursively called for the parent fragment first.
      *
      * If the fragment is the same one as last fragment in its flow in session (there has not been a layout change)
      * sets the startTime of the [SessionFragment] to be current time.
@@ -172,181 +282,138 @@ class SessionFlowManager @Inject constructor (
      * If the fragment is a new one, builds a new [SessionFragment] and adds it to the flow in session
      *
      */
-    fun updateSessionFlow(sessionFragmentInfo: SessionFragmentInfo, parentFragments: List<SessionFragmentInfo>, isParent: Boolean) {
-        val enabledParentFragments = getEnabledParentFragments(parentFragments)
-
-        if (sessionFlow.last().name != sessionFragmentInfo.activityName) {
-            Plog.error(T_ANALYTICS, T_ANALYTICS_SESSION, "Updating fragment sessionFlow failed due to invalid last activity",
-                "Expected Activity" to sessionFragmentInfo.activityName,
-                "last activity in session" to sessionFlow.last().name
-            )
-            return
-        }
-
-        if (!isParent) {
-            sessionFlow.last().fragmentFlows =
-                    addParentFragments(sessionFlow.last().fragmentFlows, enabledParentFragments)
-            sessionFlow.save()
-        }
-
-        if (!shouldBeAddedToSession(sessionFragmentInfo, parentFragments.size)) {
-            return
-        }
-
-        val fragmentParent = getFragmentSessionParent(sessionFlow, enabledParentFragments)
-
-        if (fragmentParent != null) {
-            val viewedFragment = SessionFragment(
-                    sessionFragmentInfo.fragmentName,
-                    currentTimeGenerator.getCurrentTime(),
-                    currentTimeGenerator.getCurrentTime(),
-                    0
-            )
-
-            val parentFragmentFlow = fragmentParent.fragmentFlows[sessionFragmentInfo.fragmentId]
-            if (parentFragmentFlow == null) {
-                fragmentParent.fragmentFlows[sessionFragmentInfo.fragmentId] = mutableListOf(viewedFragment)
-            } else if (parentFragmentFlow.isEmpty() ||
-                    parentFragmentFlow.last().name != sessionFragmentInfo.fragmentName) {
-                parentFragmentFlow.add(viewedFragment)
-            } else if (parentFragmentFlow.last().name == sessionFragmentInfo.fragmentName) {
-                parentFragmentFlow.last().startTime = currentTimeGenerator.getCurrentTime()
-            }
-            sessionFlow.save()
-        }
-    }
-
-    private fun getEnabledParentFragments(parentFragments: List<SessionFragmentInfo>): List<SessionFragmentInfo> {
-        val enabledParentsFragments = mutableListOf<SessionFragmentInfo>()
-        for (i in 0 until parentFragments.size) {
-            if (shouldBeAddedToSession(parentFragments[i], i)) {
-                enabledParentsFragments.add(parentFragments[i])
-            }
-        }
-        return enabledParentsFragments
-    }
-
-    /**
-     * Recursively adds the given list of parent fragments to fragmentFlows given.
-     * If some parents already are in their flow as last fragments, the work is done!
-     * (happens if some child&parent fragment is replaced with a non-parent child fragment)
-     *
-     * @param fragmentFlows The base fragmentFlows for parent fragments to be added to.
-     * @param parentFragments The list of parent fragments to be added to the flow
-     *
-     * @return The updated version of the given fragmentFlows
-     */
-    private fun addParentFragments(
-        fragmentFlows: MutableMap<String, MutableList<SessionFragment>>,
-        parentFragments: List<SessionFragmentInfo>
-    ): MutableMap<String, MutableList<SessionFragment>> {
-
-        if (parentFragments.isEmpty()) return fragmentFlows
-
-        val lastParentSessionFragment = SessionFragment(
-            parentFragments[0].fragmentName,
-            currentTimeGenerator.getCurrentTime(),
-            currentTimeGenerator.getCurrentTime(),
-            0
-        )
-
-        var lastParentFlow = fragmentFlows[parentFragments[0].fragmentId]
-        if (lastParentFlow == null) {
-            lastParentFlow = mutableListOf(lastParentSessionFragment)
-            fragmentFlows[parentFragments[0].fragmentId] = lastParentFlow
-        } else if (lastParentFlow.isEmpty() || lastParentFlow.last().name != parentFragments[0].fragmentName) {
-            lastParentFlow.add(lastParentSessionFragment)
-        }
-        lastParentFlow.last().fragmentFlows =
-                addParentFragments(lastParentFlow.last().fragmentFlows, parentFragments.drop(1))
-
-        return fragmentFlows
-    }
-
-    /**
-     * Retrieves the direct parent of a fragment in the given sessionFlow
-     *
-     * @param sessionFlow The sessionActivity list in which the parent is to be found
-     * @param parentFragments list of fragment's parents infos
-     *
-     * @return An object of [SessionFragmentParent] which is either a SessionActivity (if there is
-     * no parent fragments) or a SessionFragment
-     */
-    @VisibleForTesting
-    fun getFragmentSessionParent (
-        sessionFlow: MutableList<SessionActivity>, parentFragments: List<SessionFragmentInfo>
-    ) : SessionFragmentParent? {
-
-        if (sessionFlow.isEmpty()) {
-            Plog.error(T_ANALYTICS, T_ANALYTICS_SESSION, "Getting fragment's sessionParent failed, the given sessionFlow is empty")
-            return null
-        }
-
-        if (parentFragments.isEmpty()){
-            return sessionFlow.last()
-        }
-
-        var fragmentContainerFlow: MutableList<SessionFragment>
-
-        val firstFragmentContainerFlow = sessionFlow.last().fragmentFlows[parentFragments[0].fragmentId]
-
-        if (firstFragmentContainerFlow == null) {
-            Plog.error(T_ANALYTICS, T_ANALYTICS_SESSION, "Getting fragment's sessionParent failed, parent fragmentFlow is null",
-                "Id" to parentFragments[0].fragmentId,
-                "Flow Container" to sessionFlow.last().name
-            )
-            return null
-        }
-
-        fragmentContainerFlow = firstFragmentContainerFlow
-
-        for (parentFragment in parentFragments.drop(1)) {
-            val nextFragmentContainerFlow =
-                    fragmentContainerFlow.last().fragmentFlows[parentFragment.fragmentId]
-            if (nextFragmentContainerFlow == null) {
-                Plog.error(T_ANALYTICS, T_ANALYTICS_SESSION, "Getting fragment's sessionParent failed, parent fragmentFlow is null",
-                    "Id" to parentFragment.fragmentId,
-                    "Flow Container" to fragmentContainerFlow.last().name
+    private fun updateSessionFlow(sessionFragmentInfo: SessionFragmentInfo?): Completable {
+        return when {
+            sessionFragmentInfo == null -> Completable.complete()
+            sessionFlow.last().name != sessionFragmentInfo.activityName ->
+                Completable.error(
+                    AnalyticsException("Invalid last activity",
+                        "Expected Activity" to sessionFragmentInfo.activityName,
+                        "Last Activity In Session" to sessionFlow.last().name
+                    )
                 )
-                return null
+            !sessionFragmentInfo.shouldBeAddedToSession -> {
+                Plog.trace(T_ANALYTICS_SESSION, "Updating sessionFlow for fragment was skipped because it was disabled",
+                    "Fragment Funnel" to Funnel.fragmentFunnel,
+                    "Fragment Name" to sessionFragmentInfo.fragmentName
+                )
+                Completable.complete()
             }
-            fragmentContainerFlow = nextFragmentContainerFlow
+            else ->
+                updateSessionFlow(sessionFragmentInfo.parentFragment)
+                    .andThen(
+                        getFragmentSessionFlow(sessionFlow.last().fragmentFlows, sessionFragmentInfo)
+                            .doOnSuccess {
+                                val viewedFragment = SessionFragment(
+                                    sessionFragmentInfo.fragmentName,
+                                    currentTimeGenerator.getCurrentTime(),
+                                    currentTimeGenerator.getCurrentTime(),
+                                    0
+                                )
+                                val flow = it[sessionFragmentInfo.fragmentId]
+                                if (flow == null) {
+                                    it[sessionFragmentInfo.fragmentId] = mutableListOf(viewedFragment)
+                                } else if (flow.isEmpty() || flow.last().name != sessionFragmentInfo.fragmentName) {
+                                    flow.add(viewedFragment)
+                                } else if (flow.last().name == sessionFragmentInfo.fragmentName) {
+                                    flow.last().startTime = currentTimeGenerator.getCurrentTime()
+                                }
+                                sessionFlow.save()
+                            }
+                            .ignoreElement()
+                    )
         }
+    }
 
-        return fragmentContainerFlow.last()
+
+    /**
+     * Called when a fragment is paused to update its duration in session
+     * If the fragment is not supposed to be in the sessionFlow message (it is disabled), does not do anything
+     */
+    private fun updateFragmentDuration(sessionFragmentInfo: SessionFragmentInfo): Completable{
+        return when {
+            sessionFlow.last().name != sessionFragmentInfo.activityName ->
+                Completable.error(
+                    AnalyticsException("Invalid last activity",
+                        "Expected Activity" to sessionFragmentInfo.activityName,
+                        "Last Activity In Session" to sessionFlow.last().name
+                    )
+                )
+            !sessionFragmentInfo.shouldBeAddedToSession -> Completable.complete()
+            else ->
+                getFragmentSessionFlow(sessionFlow.last().fragmentFlows, sessionFragmentInfo)
+                    .map { map -> map[sessionFragmentInfo.fragmentId] }
+                    .map { it }
+                    .doOnSuccess { flow ->
+                        when {
+                            flow.isEmpty() ->
+                                Completable.error(
+                                    AnalyticsException("Empty fragmentFlow",
+                                        "Activity" to sessionFragmentInfo.activityName,
+                                        "Id" to sessionFragmentInfo.fragmentId
+                                    )
+                                )
+                            flow.last().name != sessionFragmentInfo.fragmentName ->
+                                Completable.error(
+                                    AnalyticsException("Wrong value as last seen fragment in fragmentFlow",
+                                        "Expected Last Seen Fragment" to sessionFragmentInfo.fragmentName,
+                                        "Current" to flow.last().name
+                                    )
+                                )
+                            else -> {
+                                flow.last().duration += (currentTimeGenerator.getCurrentTime()
+                                        - (flow.last().startTime))
+                                sessionFlow.save()
+                                Completable.complete()
+                            }
+                        }
+                    }
+                    .ignoreElement()
+        }
     }
 
     /**
-     * Called when updating session fragmentFlows.
-     * Checks whether the given fragment should be added to sessionFlow message according to the preDefined config
-     * @see [sessionFragmentFlowEnabled]
-     * @see [sessionFragmentFlowExceptionList]
-     * @see [sessionFragmentFlowDepthLimit]
+     * Retrieves the fragment flow in the session which should include the given sessionFragment Info
+     *
+     * @param fragmentFlow The fragmentFlow of the current activity in the session
+     * @param sessionFragmentInfo The fragment whose flow is to be found
+     *
      */
-    private fun shouldBeAddedToSession(sessionFragmentInfo: SessionFragmentInfo, numberOfParents: Int): Boolean{
-        val fragmentFlowInfo = FragmentFlowInfo(sessionFragmentInfo.activityName, sessionFragmentInfo.fragmentId)
-        return (hengamConfig.sessionFragmentFlowEnabled && numberOfParents < hengamConfig.sessionFragmentFlowDepthLimit && !hengamConfig.sessionFragmentFlowExceptionList.contains(fragmentFlowInfo)) ||
-                (!hengamConfig.sessionFragmentFlowEnabled && hengamConfig.sessionFragmentFlowExceptionList.contains(fragmentFlowInfo))
+    private fun getFragmentSessionFlow (
+        fragmentFlow: MutableMap<String, MutableList<SessionFragment>>,
+        sessionFragmentInfo: SessionFragmentInfo
+    ) : Single<MutableMap<String, MutableList<SessionFragment>>> {
+
+        return if (sessionFragmentInfo.parentFragment == null) Single.just(fragmentFlow)
+        else if (!sessionFragmentInfo.parentFragment.shouldBeAddedToSession) getFragmentSessionFlow(fragmentFlow, sessionFragmentInfo.parentFragment)
+        else getFragmentSessionFlow(fragmentFlow, sessionFragmentInfo.parentFragment)
+            .map { it[sessionFragmentInfo.parentFragment.fragmentId]?.last()?.fragmentFlows }
+            .map { it }
     }
 
-    fun changeSessionFragmentFlowConfig(message: SessionFragmentFlowConfigMessage) {
-        hengamConfig.sessionFragmentFlowEnabled = message.isEnabled
-        if (message.depthLimit != null) hengamConfig.sessionFragmentFlowDepthLimit = message.depthLimit
-        hengamConfig.sessionFragmentFlowExceptionList = message.exceptionList
+    private fun sendLastActivitySessionFlowItemMessage(): Completable {
+        return if (sessionFlow.isEmpty()) Completable.complete()
+        else Completable.fromCallable {
+            postOffice.sendMessage(
+                message = SessionInfoMessageBuilder.build(sessionIdProvider.sessionId, sessionFlow.last(), appVersionCode),
+                sendPriority = SendPriority.LATE
+            )
+        }
     }
 
-    fun sendLastActivitySessionFlowItemMessage() {
-        Plog.trace(T_ANALYTICS, T_ANALYTICS_SESSION,
-            "Sending session activity message",
-            "activityName" to sessionFlow.last().name
-        )
-        postOffice.sendMessage(
-            message = SessionInfoMessageBuilder.build(sessionId, sessionFlow.last(), appVersionCode),
-            sendPriority = SendPriority.LATE
-        )
+    fun registerEndSessionListener() {
+        hengamLifecycle.onAppClosed
+            .doOnNext { taskScheduler.scheduleTask(SessionEndDetectorTask.Options, initialDelay = hengamConfig.sessionEndThreshold) }
+            .justDo()
+
+        appLifecycleListener.onActivityResumed()
+            .justDo {
+                taskScheduler.cancelTask(SessionEndDetectorTask.Options)
+            }
     }
 
     companion object {
-        const val SESSION_ID_LENGTH = 16
+        /** This constant should be the same as [UserActivityAction.ACTIVITY_EXTRA_NOTIF_MESSAGE_ID] **/
+        const val ACTIVITY_EXTRA_NOTIF_MESSAGE_ID = "hengam_notif_message_id"
     }
 }

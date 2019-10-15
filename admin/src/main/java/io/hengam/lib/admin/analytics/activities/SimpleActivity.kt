@@ -13,6 +13,7 @@ import android.provider.MediaStore
 import android.support.v4.app.ActivityCompat
 import android.util.Log
 import android.view.View
+import io.hengam.lib.admin.MainActivity
 
 
 class SimpleActivity : AppCompatActivity() {
@@ -42,14 +43,14 @@ class SimpleActivity : AppCompatActivity() {
         }
 
         homeButton.setOnClickListener {
-            val bitmap = screenShot(it)
-            Log.i("testtest", "bitmap is $bitmap")
-            val result = MediaStore.Images.Media.insertImage(contentResolver, bitmap, "homeButton" , "theHomeButton")
-            Log.i("testtest", "result is $result")
-            val result2 = MediaStore.Images.Media.insertImage(contentResolver, screenShot(it.rootView), "parent" , "parent")
+//            val bitmap = screenShot(it)
+//            Log.i("testtest", "bitmap is $bitmap")
+//            val result = MediaStore.Images.Media.insertImage(contentResolver, bitmap, "homeButton" , "theHomeButton")
+//            Log.i("testtest", "result is $result")
+//            val result2 = MediaStore.Images.Media.insertImage(contentResolver, screenShot(it.rootView), "parent" , "parent")
 
-//            val intent = Intent(this, MainActivity::class.java)
-//            startActivity(intent)
+            val intent = Intent(this, MainActivity::class.java)
+            startActivity(intent)
         }
     }
 

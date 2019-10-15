@@ -1,9 +1,8 @@
 package io.hengam.lib.datalytics.tasks
 
 import android.content.Context
-import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.*
 import androidx.work.NetworkType
-import androidx.work.WorkerParameters
 import io.hengam.lib.Hengam
 import io.hengam.lib.datalytics.InstallDetectorTaskInterval
 import io.hengam.lib.datalytics.LogTags.T_DATALYTICS
@@ -24,8 +23,8 @@ import javax.inject.Inject
  * A task which runs periodically and attempts to detect app installation on device.
  *
  */
-class InstallDetectorTask(context: Context, workerParameters: WorkerParameters)
-    : HengamTask("install_detector_task", context, workerParameters) {
+class InstallDetectorTask
+    : HengamTask() {
 
     @Inject
     lateinit var applicationInfoHelper: ApplicationInfoHelper
@@ -34,7 +33,7 @@ class InstallDetectorTask(context: Context, workerParameters: WorkerParameters)
     @Inject
     lateinit var hengamStorage: HengamStorage
 
-    override fun perform(): Single<Result> {
+    override fun perform(inputData:Data): Single<ListenableWorker.Result> {
         val datalyticsComponent = HengamInternals.getComponent(DatalyticsComponent::class.java)
                 ?: throw ComponentNotAvailableException(Hengam.DATALYTICS)
         datalyticsComponent.inject(this)
@@ -47,7 +46,7 @@ class InstallDetectorTask(context: Context, workerParameters: WorkerParameters)
         }
         if (apps.isEmpty()) Plog.info(T_DATALYTICS, "no app installed in last" + Time(TimeUtils.nowMillis() - lastCollectedAt, TimeUnit.MILLISECONDS).bestRepresentation())
         hengamStorage.putLong("install_detector_task_last_run_time", TimeUtils.nowMillis())
-        return Single.just(Result.success())
+        return Single.just(ListenableWorker.Result.success())
     }
 
     class Options : PeriodicTaskOptions() {

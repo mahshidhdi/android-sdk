@@ -10,5 +10,5 @@ object LogTag {
     const val T_ANALYTICS = "Analytics"
     const val T_ANALYTICS_GOAL = "Goal"
     const val T_ANALYTICS_SESSION = "Session"
-    const val T_ANALYTICS_LIFECYCLE_LISTENER = "LifeCycleListener"
+    const val T_ANALYTICS_LIFECYCLE_NOTIFIER = "LifeCycleNotifier"
 }

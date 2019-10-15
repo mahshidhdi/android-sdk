@@ -3,7 +3,6 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
-
 android {
     compileSdkVersion setup.compileSdk
 
@@ -28,17 +27,22 @@ android {
         sourceSets.getByName(buildType.name).java.srcDirs +=
                 "build/generated/source/kaptKotlin/${buildType.name}"
     }
+
+    // TODO remove this when migrated to AndroidX
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
     implementation project(":utils")
     implementation project(":rxjava")
 
     testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
     testImplementation "io.mockk:mockk:${versions.mockk}"
     testImplementation project(':test-utils')
 
@@ -59,7 +63,7 @@ dependencies {
 
     // Location
     implementation "com.google.android.gms:play-services-location:${versions.gms}"
-    implementation 'com.android.support:support-annotations:27.0.1'
+//    implementation 'com.android.support:support-annotations:28.0.0'
 }
 
 ext {
@@ -67,7 +71,8 @@ ext {
     bintrayName = 'hengam-core'
     libraryName = "HengamCore"
     libraryDescription = "Hengam Plus Core module"
+    uploadSources = true
 }
 
 apply from : "$rootProject.projectDir/bintray-android.gradle"
-
+apply from : "$rootProject.projectDir/publish.gradle"

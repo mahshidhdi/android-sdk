@@ -9,7 +9,6 @@ import io.hengam.lib.internal.HengamMoshi
 import io.hengam.lib.notification.*
 import io.hengam.lib.notification.messages.MessageDispatcher
 import io.hengam.lib.notification.NotificationStorage
-import io.hengam.lib.notification.tasks.InstallationCheckTask
 import io.hengam.lib.notification.tasks.NotificationBuildTask
 import io.hengam.lib.notification.ui.PopupDialogActivity
 import io.hengam.lib.notification.ui.WebViewActivity
@@ -33,7 +32,7 @@ interface NotificationComponent : HengamComponent {
     fun inject(actionService: PopupDialogActivity)
     fun inject(webViewActivity: WebViewActivity)
     fun inject(bootCompletedIntentReceiver: BootCompletedIntentReceiver)
-    fun inject(installationCheckTask: InstallationCheckTask)
+
     fun inject(notificationBuildTask: NotificationBuildTask)
 
 }

@@ -27,7 +27,7 @@ class CollectionTaskOptions(
 
     override fun existingWorkPolicy(): ExistingPeriodicWorkPolicy? = ExistingPeriodicWorkPolicy.KEEP
 
-    override fun taskId(): String? = "hengam_collection_${collectable.id}"
+    override fun taskId(): String = "hengam_collection_${collectable.id}"
 
     override fun maxAttemptsCount(): Int = collectorSettings.maxAttempts
 

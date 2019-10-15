@@ -84,7 +84,12 @@ class CellularInfoCollector @Inject constructor(
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
             return null
         }
-        
+
+        Plog.debug(T_DATALYTICS, "Creating cellArray from CellInfo",
+            "type" to cell.javaClass.simpleName,
+            "status" to cell.isRegistered
+        )
+
         val equalInvalidVal = "=" + Int.MAX_VALUE
         return when (cell) {
             is CellInfoLte -> {
@@ -158,7 +163,6 @@ class CellularInfoCollector @Inject constructor(
                     parseUnknownCell(cell.toString())
             )
         }
-
     }
 
 

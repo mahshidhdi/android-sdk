@@ -1,6 +1,7 @@
 package io.hengam.lib.utils
 
 import android.annotation.SuppressLint
+import android.app.usage.UsageStatsManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -8,6 +9,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.Build
+import android.os.Bundle
 import io.hengam.lib.LogTag.T_UTILS
 import io.hengam.lib.messages.common.ApplicationDetail
 import io.hengam.lib.utils.log.Plog
@@ -29,6 +31,22 @@ class ApplicationInfoHelper @Inject constructor(
         val pm = context.packageManager
         return try {
             pm?.getPackageInfo(packageName ?: context.packageName, 0)?.versionName
+        } catch (ex: PackageManager.NameNotFoundException) {
+            null
+        }
+    }
+
+    /**
+     * Get the manifest metaData of an installed application.
+     *
+     * @param packageName The package name of the application to get the metaData for. If not
+     *                    specified the package name of the running application will be used.
+     * @return The application manifest metaData bundle
+     */
+    fun getManifestMetaData(packageName: String? = null): Bundle? {
+        val pm = context.packageManager
+        return try {
+            pm?.getApplicationInfo(packageName ?: context.packageName, PackageManager.GET_META_DATA)?.metaData
         } catch (ex: PackageManager.NameNotFoundException) {
             null
         }
@@ -211,6 +229,26 @@ class ApplicationInfoHelper @Inject constructor(
             firstInstallTime == lastUpdateTime
         } catch (e: PackageManager.NameNotFoundException) {
             true
+        }
+
+    }
+
+    fun getAppStandByBucket(): String? {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val usageStats = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+                when (usageStats.appStandbyBucket) {
+                    5 -> "EXEMPTED"
+                    10 -> "ACTIVE"
+                    20 -> "WORKING_SET"
+                    30 -> "FREQUENT"
+                    40 -> "RARE"
+                    50 -> "NEVER"
+                    else -> null
+                }
+            } else null
+        } catch (e: Exception) {
+            null
         }
 
     }

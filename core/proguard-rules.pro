@@ -64,3 +64,7 @@
 -keep class io.hengam.lib.internal.HengamDebug { *; }
 -keep class io.hengam.lib.internal.DebugCommandProvider { *; }
 -keep class io.hengam.lib.internal.DebugInput { *; }
+
+-keep class io.hengam.lib.internal.task.HengamTaskPerformer { *; }
+
+-keep public class kotlin.reflect.jvm.internal.impl.** { public *; }

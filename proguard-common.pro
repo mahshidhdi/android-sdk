@@ -2,6 +2,7 @@
 -keepparameternames
 
 -keepclassmembers enum io.hengam.lib.** { *; }
+-keepclassmembers enum androidx.work.** { *; }
 
 -keep class io.hengam.lib.internal.HengamComponentInitializer { *; } # This is needed so the one below works in consumer rules
 -keep class * extends io.hengam.lib.internal.HengamComponentInitializer {

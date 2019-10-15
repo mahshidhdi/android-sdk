@@ -10,8 +10,8 @@ android {
         applicationId "io.hengam.adminapp"
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode 200009901
-        versionName '2.0.0#01'
+        versionCode 200009905
+        versionName '2.0.0#05'
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         multiDexEnabled false
     }
@@ -84,7 +84,7 @@ dependencies {
 
     // ViewModel and LiveData
     implementation "android.arch.lifecycle:extensions:1.1.1"
-    annotationProcessor "android.arch.lifecycle:compiler:1.1.1"
+    kapt "android.arch.lifecycle:compiler:1.1.1"
 
     // Moshi
     implementation "com.squareup.moshi:moshi:${versions.moshi}"

@@ -15,7 +15,6 @@ class NewGoalMessage (
     @Json(name = "button") val buttonClickGoals: List<ButtonClickGoal>
 ) {
     class Parser : DownstreamMessageParser<NewGoalMessage>(
-//         TODO: add a message type for goal passing
         MessageType.Analytics.Downstream.NEW_GOAL,
         { NewGoalMessageJsonAdapter(it) }
     )

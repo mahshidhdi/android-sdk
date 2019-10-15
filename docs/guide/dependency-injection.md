@@ -61,42 +61,32 @@ class BoringStuff @Inject constructor (
 }
 ```
 
-## Components
+#### Dagger Components
 
 We need to define Dagger Components in order to use dependency injection with Dagger. Dagger Components contain the dependency graph and factory classes for creating instances of our classes. 
 
-All we need to do is provide an interface for the Component and annotate it with `@Component`. Dagger will then generate an implementation of our interface which we can use to create a dependency graph.
+In order to create a Dagger component we need to define an interface for our component and annotate it with the `@Component` annotation.
 
 The Hengam core module defines a `CoreComponent` Component in the `core.dagger` package.
 
 ```kotlin
-// core/dagger/CoreComponent.kt
 @Component
-interface CoreComponent {
+interface MyComponent {
     ...
 }
 ```
 
-After defining the Component interface and building the project, Dagger will generate a class which implements the interface. We may then create an instance of the generated Component class to build the dependency graph and start using it. The generated class's name will be the interface name prefixed with `Dagger`.
+After defining the component interface and building the project, Dagger will generate a class which implements the interface. The class will have the same name as the interface with a `Dagger` prefix (in our case `DaggerMyComponent`)
+
+We can now create an instance of the generated component class to build the dependency graph and start using it.
 
 ```kotlin
-val core = DaggerCoreComponent.Builder().build()
-assertTrue(core is CoreComponent)
-
-core.topicManager().subscribe("topic")
+val core = DaggerMyComponent.Builder().build()
+assertTrue(core is MyComponent)
 ```
 
 
-Notice how in the example above we were able to get an instance of the `TopicManager` class by calling the `core.topicManager()` method. In order to be able to do so we need to add method declarations to the Component interface for classes which we wish to access directly from the dependency graph.
-
-```kotlin
-@Component
-interface CoreComponent {
-    fun topicManager(): TopicManager
-}
-```
-
-The name of the declared method is arbitraty. Dagger uses the return type of the method to know what object to create and return once the method is called.
+## Components
 
 
 #### Hengam Service Module Components
@@ -108,52 +98,61 @@ Each Hengam service module (see [Project Structure](/guide/structure)) should de
 // awesome/dagger/AwesomeComponent.kt
 @Component(dependencies = [(CoreComponent::class)])
 interface AwesomeComponent {
-    fun awesomeStuff(): AwesomeStuff
+    fun boringStuff(): BoringStuff
 }
 ```
 
-We created a Component for our `awesome` module. We can now build an instance of the dependency graph using the generated `DaggerAwesomeComponent` class and use it to access the `AwesomeStuff` class.
+We created a Component for our `awesome` module. We can now build an instance of the dependency graph using the generated `DaggerAwesomeComponent` class. Also note how we defined the `CoreComponent` as a dependency for our component.
 
-There is an important note to take into account here. If you recall, the `AwesomeStuff` class required an instance of `PostOffice` as a dependency. The `PostOffice` class is a singleton class (see [Singletons]()) defined in the `CoreComponent` dependency graph. Since, the `AwesomeComponent` has listed the `CoreComponent` as a dependency it will be able to use singletons defined in the `CoreComponent`, however in order to do so an accessor to the singleton must be provided in the `CoreComponent`. See the example below:
+Notice how in the component interface we defined a method with a `BoringStuff` return type. By doing this our `DaggerAwesomeComponent` class will now have a `boringStuff()` method which returns an instance of the `BoringStuff` class every time it is called. Dagger will also automatically create an instance of `AwesomeStuff` and pass it to the `BoringStuff` class as a dependency.
 
-```kotlin
-// core/dagger/CoreComponent.kt
-@Component
-interface CoreComponent {
-    fun topicManager(): TopicManager
-    fun postOffice(): PostOffice   // This is required so that dependant components may use PostOffice
-}
-
-// awesome/dagger/AwesomeComponent.kt
-@Component(dependencies = [(CoreComponent::class)])
-interface AwesomeComponent {
-    fun awesomeStuff(): AwesomeStuff
-}
-```
+We can now create an instance of our `AwesomeComponent`, get an instance of the `BoringStuff` class and use it:
 
 ```kotlin
-
-val awesome = AwesomeComponent
+val awesome = DaggerAwesomeComponent
                     .Builder()
                     .coreComponent(core)
                     .build()
                     
-awesome.awesomeStuff().doAwesomeStuff()
+awesome.boringStuff().lightenUp()
 
 ```
 
-Every service module Component should provide direct access methods in the interface for providing the following four classes:
+!!! tip "Careful when using Singletons"
+    There is an important note to take into account here. If you recall, the `AwesomeStuff` class required an instance of `PostOffice` as a dependency. The `PostOffice` class is a singleton class (see [Singletons](#singleton-classes)) defined in the `CoreComponent` dependency graph. 
+
+    We want the `AwesomeStuff` class in the `AwesomeComponent` to use the same `PostOffice` singleton which exists in the  `CoreComponent` depenency graph. Since the `AwesomeComponent` has listed the `CoreComponent` as a dependency it will be able to use singletons defined in the `CoreComponent`, however in order to do so an accessor to the singleton must be provided in the `CoreComponent`. See the example below:
+
+    ```kotlin
+    // core/dagger/CoreComponent.kt
+    @Component
+    interface CoreComponent {
+        fun postOffice(): PostOffice   // This is required so that dependant components may use the PostOffice singleton
+    }
+
+    // awesome/dagger/AwesomeComponent.kt
+    @Component(dependencies = [(CoreComponent::class)])
+    interface AwesomeComponent {
+        fun boringStuff(): BoringStuff
+    }
+    ```
+
+
+Every service module Component should provide direct access methods in the interface for providing the following classes:
 
 - **Context**: The Android Context class
 - **HengamMoshi**: The `HengamMoshi` class. This should be provided through the `moshi()` method.
 - **MessageDispatcher**: A `MessageDispatcher` for the module. See [Where To Register Message Handlers](/guide/receiving-message/#where-to-register-message-handlers)
 - **A HengamApi subclass**: If the module provides an API to the developer (see [Providing APIs for Developers](guide/receiving-message/#where-to-register-message-handlers)), it should be available in the Component interface through the `api()` method.
+- **A DebugCommandProvider subclass**: If the module provides debug commands, it should provide it's `DebugCommandProvider` class through the `debugCommands()` method
+
 ```kotlin
 interface AwesomeComponent {
     fun context(): Context
     fun moshi(): HengamMoshi
     fun messageDispatcher(): MessageDispatcher()
     fun api(): HengamAwesome
+    fun debugCommands(): DebugCommands
 }
 ```
 
@@ -161,7 +160,7 @@ interface AwesomeComponent {
 
 ## Singleton Classes
 
-In the [Dagger Basics](#dagger-basics) section we created a class `AwesomeStuff` and using the `@Inject` annotation we asked Dagger to provide this class to any other class which needs it as a dependency. By default, Dagger will create new instances of our class everytime it is needs to be passed to another class. However, sometimes we require several classes to share the same instance of a dependency. Or we may require that a single instance of the dependency exist throughout the application (i.e., a singleton class). This behaviour can be achieved using Dagger Scopes.
+In the [Dagger Basics](#dagger-basics) section we created a class `AwesomeStuff` and using the `@Inject` annotation we asked Dagger to provide this class to any other class which needs it as a dependency. By default, Dagger will create new instances of our class everytime it is needs to be passed to another class. However, sometimes we require several classes to share the same instance of a dependency. Or we may require that a *single* instance of the dependency exist throughout the application (i.e., a singleton class). This behaviour can be achieved using Dagger Scopes.
 
 !!! tip "@Singleton"
     Dagger comes with a predefined scope `@Singleton` which could be used for defining singleton classes. However, we do not use this scope in Hengam. Instead, each component should define it's own custom scope as shown below.

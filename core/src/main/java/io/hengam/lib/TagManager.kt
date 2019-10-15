@@ -25,16 +25,16 @@ class TagManager @Inject constructor(
         private val postOffice: PostOffice,
         hengamStorage: HengamStorage
 ) {
-    private val tagStore = hengamStorage.createStoredSet("added_tags", String::class.java)
+    private val tagStore = hengamStorage.createStoredMap("added_tags", String::class.java)
 
-    val subscribedTags: Set<String> = tagStore
+    val subscribedTags: Map<String, String> = tagStore
 
     /**
      * Add a tag
      *
      * @return A [Completable] which will complete when topic is subscribed
      */
-    fun addTags(tags: List<String>): Completable {
+    fun addTags(tags: Map<String, String>): Completable {
         return Completable.fromCallable {
             postOffice.sendMessage(TagSubscriptionMessage(addedTags = tags))
         }.subscribeOn(cpuThread())
@@ -46,7 +46,7 @@ class TagManager @Inject constructor(
             .doOnComplete {
                 Plog.info(T_TOPIC, "Successfully subscribed to tags $tags")
             }
-            .doOnComplete { tagStore.addAll(tags) }
+            .doOnComplete { tagStore.putAll(tags) }
     }
 
     /**
@@ -66,6 +66,6 @@ class TagManager @Inject constructor(
             .doOnComplete {
                 Plog.info(T_TOPIC, "Successfully Unsubscribed from tags $tags")
             }
-            .doOnComplete { tagStore.removeAll(tags) }
+            .doOnComplete { tags.forEach { tagStore.remove(it) } }
     }
 }

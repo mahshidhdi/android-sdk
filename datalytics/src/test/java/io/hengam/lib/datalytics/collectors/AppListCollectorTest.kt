@@ -79,18 +79,7 @@ class AppListCollectorTest {
     }
 
     @Test
-    fun collect_ShouldRetryIfFailedToGetBlacklistOnNonFinalAttempt() {
-        appListCollector.isFinalAttempt = false
-        every { httpUtils.request(hengamConfig.appListBlackListUrl) } returns Single.error(IOException("Test Error"))
-        val scheduler = TestScheduler()
-        val result = appListCollector.installedApplications.subscribeOn(scheduler).test()
-        scheduler.triggerActions()
-        result.assertError(CollectionRetryRequiredError::class.java)
-    }
-
-    @Test
-    fun collect_ShouldUseNoBlacklistIfFailedToGetBlacklistOnFinalAttempt() {
-        appListCollector.isFinalAttempt = true
+    fun collect_ShouldUseNoBlacklistIfFailedToGetBlacklist() {
         every { httpUtils.request(hengamConfig.appListBlackListUrl) } returns Single.error(IOException("Test Error"))
         val scheduler = TestScheduler()
         val result = appListCollector.installedApplications.subscribeOn(scheduler).test()

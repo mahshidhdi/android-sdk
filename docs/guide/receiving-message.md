@@ -203,6 +203,11 @@ class MessageDispatcher @Inject constructor(
 }
 ```
 
-## When to register message handlers?
+!!! warning "Call `listenForMessages()` during Pre-Initialization"
+    Make sure to register all your message handlers during the [pre-initialization](/guide/initialization) step.
+    The pre-initialization step is run before any other parts of the code and is the appropiate place to register
+    message handlers.
 
-Downstream messages are not stored or replayed. This means that if a downstream message is received before you have registered a handler using the `PostOffice.mailBox()` method, then you will not receive the message even if you register the handler later. Typically, you will want to register your handlers by calling the `MessageDispatcher.listenForMessages()` method on the very start of the application. The appropiate place for doing so is in the [pre-initialization](/guide/initialization/#pre-initialization) step.
+    Sometimes the application may be closed and may open as a result of receiving a new FCM message. If you register
+    the message handlers after pre-initialization (for example in post-initialization), the FCM message may be processed
+    before you get a chance to register the handlers and you will miss the message.

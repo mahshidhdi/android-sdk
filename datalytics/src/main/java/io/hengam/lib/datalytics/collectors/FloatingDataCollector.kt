@@ -17,7 +17,8 @@ import javax.inject.Inject
 class FloatingDataCollector @Inject constructor(
         private val networkInfoHelper: NetworkInfoHelper,
         private val networkUtils: NetworkUtils,
-        private val geoUtils: GeoUtils
+        private val geoUtils: GeoUtils,
+        private val applicationInfoHelper: ApplicationInfoHelper
 ): Collector() {
     private val emptyLocation: Location = Location("")
 
@@ -43,7 +44,8 @@ class FloatingDataCollector @Inject constructor(
                     wifiNetworkSSID = (networkType as? NetworkType.Wifi)?.info?.ssid,
                     wifiNetworkSignal = (networkType as? NetworkType.Wifi)?.info?.signal,
                     wifiMac = (networkType as? NetworkType.Wifi)?.info?.mac,
-                    mobileNetworkName = (networkType as? NetworkType.Mobile)?.dataNetwork
+                    mobileNetworkName = (networkType as? NetworkType.Mobile)?.dataNetwork,
+                    appStandByBucket = applicationInfoHelper.getAppStandByBucket()
             )
         }.toObservable()
     }

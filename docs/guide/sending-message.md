@@ -14,22 +14,19 @@ class BookMessage(
     val title: String,
     val author: String,
     val publishYear: Int? = null
-    val timestamp: Int = System.currentMillis()
 ) : TypedUpstreamMessage<BookMessage>(20, { /* Adapter()  */ })
 ```
 
-The `TypedUpstreamMessage` takes a type parameter which should always be the type of your message class. Also, the `TypedUpstreamMessage` constructor takes two parameters. The first parameter is the message type which should be unique among all upstream messages. The second parameter should be a function which takes a `Moshi` instance as in input and returns a `JsonAdapter` capable of serializing your upstream message into JSON format.
+The `TypedUpstreamMessage` takes a type parameter which should always be the type of your message class. Also, the `TypedUpstreamMessage` constructor takes two parameters. The first parameter is the message type which should be unique among all upstream message types. The second parameter should be a function which takes a `Moshi` instance as in input and returns a `JsonAdapter` capable of serializing your upstream message into JSON format.
 
 !!! tip "Coding Style"
     Avoid using integer literals as the message types directly in your message classes like we have done in the example above. Instead, store all upstream message types in `MessageTypes.Upstream` and refer to the type defined there, as shown in the example below.
 
 !!! info "Auto timestamps"
-    In the `BookMessage` example class we have a `timestamp` which will be assigned a default value with the current time when the message is created. Use this practice for adding timestamps to your messages.
+    All upstream messages will automatically be given a timestamp field (through the superclass). There is no need to manually include one in your own messages.
 
-To make life easier and avoid having to write your own adapters, use the Moshi generated adapters for your upstream messages. To do so, add the `@JsonClass(generateAdapter=true)` annotation to your message class. Also, if you want the name of the serialized field of one of your message parameters to be different than it's name in the class, use the `@Json(name="field_name")` annotation for that field. See the example below.
-
-
-After adding the `JsonClass(generateAdapter=true)` annotation to your class build the project and the Moshi library should generate a adapter class for you. In the case of our example the class will be named `BookMessageJsonAdapter`. Provide this adapter to the second parameter of the `TypedUpstreamMessage` constructor. The generated adapter's constructor will require a Moshi instance, use the Moshi instance given to you in the lambda for this purpose.
+To make life easier and avoid having to write your own adapters, use the Moshi generated adapters for your upstream messages by adding the `@JsonClass(generateAdapter=true)` annotation to your message class. 
+By adding this annotation, Moshi will automatically generate a adapter class for you (you may need to rebuild the project). In the case of our example the class will be named `BookMessageJsonAdapter`. Provide this adapter to the second parameter of the `TypedUpstreamMessage` constructor like the example below:
 
 
 ```kotlin
@@ -44,10 +41,10 @@ class BookMessage(
 )
 ```
 
+Also note in the example above we used the `@Json(name="field_name")` annotation to specify what we want the field names to be in the resulting JSON string.
+
 !!! hint "Coding Style"
     Use `snake_case` for field names in JSON. Also, for consistency add the `@Json(name="")` annotation to all of the message fields even if the JSON name is not different than it's member name.
-
-If after building your module you still don't see the generated `JsonAdapter` for your message, see the section on setting up Moshi for more details.
 
 ### Create Upstream Message Instance
 Now that you have your message structure defined in your upstream message class, you need to create an instance of the class and provide the message parameters for that instance.
@@ -61,13 +58,13 @@ val message = BookMessage(
 ```
 
 ### Send Upstream Message
-To send the message we will use the `PostOffice.sendMessage()` method and pass are created message to it. 
+To send the message we will use the `PostOffice.sendMessage()` method and pass the created message to it. 
 
 ```kotlin
 postOffice.sendMessage(message)
 ```
 
-The message will now be scheduled to be sent to the server. The `PostOffice` guarantees delivery (except for when `persistAcrossRuns` is `false`, see below), so you do not need to handle retries on sending failures.
+After calling the `postOffice.sendMessage()` method, the message will be scheduled to be sent. The `PostOffice` guarantees delivery (except for when `persistAcrossRuns` is `false`, see below), so you do not need to handle retries on sending failures.
 
 !!! info "Use Dagger for dependency injection"
     To send messages you need an instance of the `PostOffice` class. See the section on Dagger and dependency injection to see how you could have access to a `PostOffice` instance.
@@ -75,21 +72,24 @@ The message will now be scheduled to be sent to the server. The `PostOffice` gua
 The `sendMessage` method accepts further arguments for configuring how the message will be sent. See [Send Options](#send-options).
 
 ## Send Options
-The `sendMessage` method accepts two additional arguments after the message. The arguments and their default values are shown below 
+The `sendMessage` method accepts additional arguments after the message. The arguments and their default values are shown below 
 
 ```kotlin
 postOffice.sendMessage(
     message = message,
     sendPriority = SendPriority.SOON,
     persistAcrossRuns = true
+    requiresRegistration: Boolean = true,
+    parcelGroupKey: String? = null,
+    expireAfter: Time? = null
 )
 ```
 
-### Send Priority
+### Send Priority `(sendPriority)`
 When sending a message using the `PostOffice`, you could provide a `SendPriority` option which lets you define how soon you want the message to be sent. If not provided, the default send priority for messages is `SendPriority.SOON`.
 
 !!! caution "Send Priority not Send Delay"
-    By using a relaxed send priority you notify the `PostOffice` that it is ok if the message is sent later than sooner and thus enable merging multiple messages into a single parcel. The send priority should be used for determining the upper bound of when you want the message to be sent and should **not** be used for setting delays on message sending.
+    By using a relaxed send priority you notify the `PostOffice` that *it is ok* if the message is sent later and thus enable merging multiple messages into a single parcel. The send priority should be used for determining the upper bound of when you want the message to be sent and should **not** be used for setting delays on message sending.
 
 The available send priorities are:
 
@@ -97,13 +97,20 @@ The available send priorities are:
 By using this priority you notify that you want the message to be sent immediately.
 
 #### SendPriority.SOON
-By using this priority you notify that you are ok with a few seconds delay in sending the message.
+By using this priority you notify that you are ok with a few **seconds** delay in sending the message.
+
+#### SendPriority.LATE
+By using this priority you notify that you are ok with a few **minutes** delay in sending the message.
+
+#### SendPriority.BUFFER
+By using this priority you notify that you are ok if the `PostOffice` holds off sending the message until enough
+messages are available to create a full-sized parcel.
 
 #### SendPriority.WHENEVER
 By using this priority you notify that you don't care when the message is sent. Messages using this priority will not be sent until another message with a higher priority arrives.
 
-### Persistance
-In several cases a message which is scheduled to be sent with the `PostOffice.sendMessage()` method may not be sent before the application closes. For example, if a message is scheduled with `SenderPriority.WHENEVER` and no other message with higher priority arrives in time or if message sending fails due to bad network connectivity. In such cases you may want the message to be scheduled for sending again once the application starts. 
+### Persistance `(persistAcrossRuns)`
+In several cases a message which is scheduled to be sent with the `PostOffice.sendMessage()` method may fail to be sent before the application closes. For example, if a message is scheduled with `SenderPriority.WHENEVER` and no other message with higher priority arrives in time or if message sending fails due to bad network connectivity. In such cases you may want the message to be scheduled for sending again once the application starts. 
 
 The `persistAcrossRuns` determines whether this should happen. If `persistAcrossRuns` is `true` then the message will be stored and if it is not sent before the application exits, it will be restored once the application restarts.
 
@@ -116,32 +123,87 @@ The `persistAcrossRuns` determines whether this should happen. If `persistAcross
     To avoid having mulitple in flight registration messages, we will send the registration messages with `persistAcrossRuns` set to `false`.
 
 
-## Observing Message Events
-Once a message is created it will go through three states defiend by the `UpstreamMessageState` enum class.
+### Requires Registration `(requiresRegistration)`
+If the `requiresRegistration` parameter is true the message will only be sent if Hengam
+registration has successfully been performed. If the SDK has not
+been registered yet, the message will be queued and sent when
+registration is successful.
 
-- **CREATED**: The message has been created
-- **PENDING**: The message has been given to the `PostOffice` for sending
-- **SENT**: The message has been successfully sent
+### Grouping Messages into Parcels `(parcelGroupKey)`
+In some cases you may want to avoid certain messages from being grouped together in the same parcel. You can use the
+`parcelGroupKey` to achieve this. Messages with have been sent with different `parcelGroupKey` values will not be sent
+in the same parcel.
 
-The state of the message is accessable as a `Observable<UpstreamMessageState>` object through the `UpstreamMessage.state` property. You can observe the state changes of the message by subscribing to this `Observable`.
+
+### Expiring Messages `(expireAfter)`
+Upstream messages expire if they are not successfully sent after a certain time period. The default expiration time is one week but a custom expiration time can be set with the `expireAfter` parameter. Note, expiration times are calculated from the moment the message instance was created and **not** when the `sendMessage()` method was called.
+
+## Message Mixins
+
+In some cases different upstream messages may have similar fields. Instead of duplicating the code for creating these messages 
+you could use message mixins. 
+
+For example suppose we have two upstream messages `AwsesomeMessage` and `BoringMessage` like below:
 
 ```kotlin
-val message = BookMessage(
-    // ...
+class AwesomeMessage(
+   @Json(name="awesome_field") awesomeField: String
+   @Json(name="location_lat") locationLat: String
+   @Json(name="AwesomeMessage") locationLong: String
+) : TypedUpstreamMessage<BookMessage>(
+    MessageType.Upstream.AWESOME, 
+    { AwesomeMessageJsonAdapter(it) }
 )
 
-message.state.subscribe {
-    when(it) {
-        UpstreamSenderState.CREATED -> {}
-        UpstreamSenderState.PENDING -> { Log.i("Message has been queued for sending") }
-        UpstreamSenderState.SENT -> { Log.i("Message has been sent") }
+class BoringMessage(
+   @Json(name="boring_field") boringField: String
+   @Json(name="location_lat") locationLat: String
+   @Json(name="location_long") locationLong: String
+) : TypedUpstreamMessage<BoringMessage>(
+    MessageType.Upstream.BORING, 
+    { BoringMessageJsonAdapter(it) }
+)
+
+```
+
+As you can see both messages include fields for sending the user location. We can move these fields into a message mixin. A message mixin is a class that extends the `MessageMixin` class and overrides the `collectMixinData` method. The method should 
+return a `Map` object. The contents of this `Map` will be added to the messages which use this mixin.
+
+For example a mixin for adding location data to messages could look like this:
+
+```kotlin
+class LocationMixin : MessageMixin() {
+    override fun collectMixinData(): Single<Map<String, Any?>> {
+        return getLocation()
+            .map { location -> 
+                mapOf(
+                    "location_lat" to location.lattitude,
+                    "location_long" to location.longitude
+                )
+            }
     }
 }
 ```
 
-All subscriptions created on a message state will automatically be disposed once the message has been sent so there is no need to manually dispose of subcscriptions.
+Now we can define the upstream messages to use the mixin like below:
 
-!!! caution "Message state across application runs"
-    Once you subscribe to a message's state, you will only receive state changes which occur in the same application run as when the message was created.
-    
-    If the application closes before the message has successfully been sent, you will no longer receive state changes for that particular message in the application's next run even if the message was persitant.
+```kotlin
+class AwesomeMessage(
+   @Json(name="awesome_field") awesomeField: String
+) : TypedUpstreamMessage<BookMessage>(
+    MessageType.Upstream.AWESOME, 
+    { AwesomeMessageJsonAdapter(it) },
+    listOf(LocationMixin())
+)
+
+class BoringMessage(
+   @Json(name="boring_field") boringField: String
+) : TypedUpstreamMessage<BoringMessage>(
+    MessageType.Upstream.BORING, 
+    { BoringMessageJsonAdapter(it) },
+    listOf(LocationMixin())
+)
+```
+
+Even though the messages don't directly include the location fields, the location data will be added to 
+them through the `LocationMixin`

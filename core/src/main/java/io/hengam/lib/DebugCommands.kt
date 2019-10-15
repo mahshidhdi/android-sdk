@@ -1,16 +1,11 @@
 package io.hengam.lib
 
 import android.content.Context
-import androidx.work.ExistingWorkPolicy
+import androidx.work.*
 import androidx.work.NetworkType
-import androidx.work.WorkManager
-import androidx.work.WorkerParameters
 import io.hengam.lib.LogTag.T_DEBUG
 import io.hengam.lib.internal.*
-import io.hengam.lib.internal.task.OneTimeTaskOptions
-import io.hengam.lib.internal.task.HengamTask
-import io.hengam.lib.internal.task.TaskScheduler
-import io.hengam.lib.internal.task.taskDataOf
+import io.hengam.lib.internal.task.*
 import io.hengam.lib.messages.common.ApplicationDetailJsonAdapter
 import io.hengam.lib.messages.downstream.RunDebugCommandMessage
 import io.hengam.lib.messaging.*
@@ -20,9 +15,7 @@ import io.hengam.lib.messaging.fcm.TokenState
 import io.hengam.lib.tasks.RegistrationTask
 import io.hengam.lib.tasks.UpstreamFlushTask
 import io.hengam.lib.tasks.UpstreamSenderTask
-import io.hengam.lib.utils.ApplicationInfoHelper
-import io.hengam.lib.utils.DeviceIDHelper
-import io.hengam.lib.utils.HengamStorage
+import io.hengam.lib.utils.*
 import io.hengam.lib.utils.log.Plog
 import io.hengam.lib.utils.rx.justDo
 import io.hengam.lib.utils.rx.subscribeBy
@@ -47,63 +40,73 @@ class DebugCommands @Inject constructor(
         private val fcmServiceManager: FcmServiceManager,
         private val hengamLifecycle: HengamLifecycle,
         private val fcmTokenStore: FcmTokenStore,
-        private val tagManager: TagManager
+        private val tagManager: TagManager,
+        private val geoUtils: GeoUtils
 ) : DebugCommandProvider {
     private val loremIpsum: String = "Lorem ipsum dolor sit amet, consectetur adipiscing elit".repeat(4)
 
-    override val commands: Map<String, Any> get() =
-        mapOf(
-                "Registration & FCM" to mapOf(
-                        "restart Hengam" to "restart_hengam",
-                        "Register with Server" to "register",
-                        "Am I Registered" to "is_registered",
-                        "Log FCM Details" to "log_fcm",
-                        "Revoke FCM Token" to "revoke_fcm"
-                ),
-                "Messaging" to mapOf(
-                        "Upstream Tests" to mapOf(
-                                "Send Single Message (immediate)" to "send_msg_single",
-                                "Send Single Message (buffer)" to "send_msg_buff",
-                                "Send Very Large Message" to "send_msg_lg",
-                                "Send Lots of Small Messages" to "send_msg_lots_sm"
-                        ),
-                        "Schedule Upstream Sender" to "upstream_send",
-                        "Change Parcel Size Limit" to "parcel_size_limit",
-                        "Print State" to "msg_stats",
-                        "List In Memory Messages" to "list_memory_msg",
-                        "List Persisted Messages" to "list_persisted_msg"
+    override val commands: Map<String, Any>
+        get() =
+            mapOf(
+                    "Registration & FCM" to mapOf(
+                            "restart Hengam" to "restart_hengam",
+                            "Register with Server" to "register",
+                            "Am I Registered" to "is_registered",
+                            "Log FCM Details" to "log_fcm",
+                            "Revoke FCM Token" to "revoke_fcm"
+                    ),
+                    "Messaging" to mapOf(
+                            "Upstream Tests" to mapOf(
+                                    "Send Single Message (immediate)" to "send_msg_single",
+                                    "Send Single Message (buffer)" to "send_msg_buff",
+                                    "Send Very Large Message" to "send_msg_lg",
+                                    "Send Lots of Small Messages" to "send_msg_lots_sm"
+                            ),
+                            "Schedule Upstream Sender" to "upstream_send",
+                            "Change Parcel Size Limit" to "parcel_size_limit",
+                            "Print State" to "msg_stats",
+                            "List In Memory Messages" to "list_memory_msg",
+                            "List Persisted Messages" to "list_persisted_msg"
 
-                ),
-                "Topic" to mapOf(
-                        "Subscribe to Topic" to "topic_subscribe",
-                        "Unsubscribe from Topic" to "topic_unsubscribe",
-                        "List Subscribed Topics" to "topic_list"
-                ),
-                "Tag" to mapOf(
-                    "Add Tag" to "tag_subscribe",
-                    "Remove Tag" to "tag_unsubscribe",
-                    "List Added Tags" to "tag_list"
-                ),
-                "User & Device Info" to mapOf(
-                        "Get Advertising Id" to "get_gaid",
-                        "Get Android_Id" to "get_aid",
-                        "Get Custom Id" to "get_cid",
-                        "Set Custom Id" to "set_cid",
-                        "Get User Email" to "get_email",
-                        "Set User Email" to "set_email",
-                        "Get User Phone Number" to "get_phone",
-                        "Set User Phone Number" to "set_phone"
-                ),
-                "Tasks" to mapOf(
-                        "WorkManager Status" to "workmanager_status",
-                        "Cancel All Tasks" to "cancel_tasks",
-                        "Schedule task with 3 attempts" to "sched_retrying_task"
-                ),
-                "Misc" to mapOf(
-                        "App Details" to "app_details",
-                        "Log Storage" to "log_storage"
-                )
-        )
+                    ),
+                    "Topic" to mapOf(
+                            "Subscribe to Topic" to "topic_subscribe",
+                            "Subscribe to Topic Globally" to "topic_subscribe_globally",
+                            "Unsubscribe from Topic" to "topic_unsubscribe",
+                            "Unsubscribe from Topic Globally" to "topic_unsubscribe_globally",
+                            "List Subscribed Topics" to "topic_list"
+                    ),
+                    "Tag" to mapOf(
+                            "Add Tag" to "tag_subscribe",
+                            "Remove Tag" to "tag_unsubscribe",
+                            "List Added Tags" to "tag_list",
+                            "Remove all tags" to "tag_remove_all"
+                    ),
+                    "User & Device Info" to mapOf(
+                            "Get Advertising Id" to "get_gaid",
+                            "Get Android_Id" to "get_aid",
+                            "Get Custom Id" to "get_cid",
+                            "Set Custom Id" to "set_cid",
+                            "Get User Email" to "get_email",
+                            "Set User Email" to "set_email",
+                            "Get User Phone Number" to "get_phone",
+                            "Set User Phone Number" to "set_phone"
+                    ),
+                    "Location" to mapOf(
+                            "Last location available" to "is_last_available",
+                            "Get last known" to "get_last_known",
+                            "Request for location" to "request_location"
+                    ),
+                    "Tasks" to mapOf(
+                            "WorkManager Status" to "workmanager_status",
+                            "Cancel All Tasks" to "cancel_tasks",
+                            "Schedule task with 3 attempts" to "sched_retrying_task"
+                    ),
+                    "Misc" to mapOf(
+                            "App Details" to "app_details",
+                            "Log Storage" to "log_storage"
+                    )
+            )
 
     override fun handleCommand(commandId: String, input: DebugInput): Boolean {
         when (commandId) {
@@ -127,26 +130,26 @@ class DebugCommands @Inject constructor(
                 /* Perform registration */
 //                registrationManager.checkRegistration()
                 fcmTokenStore.revalidateTokenState()
-                    .justDo(LogTag.T_FCM, LogTag.T_REGISTER) {
-                        Plog.debug(LogTag.T_REGISTER, "Token state is $it")
+                        .justDo(LogTag.T_FCM, LogTag.T_REGISTER) {
+                            Plog.debug(LogTag.T_REGISTER, "Token state is $it")
 
-                        if (it == TokenState.SYNCING) {
-                            Plog.info(LogTag.T_REGISTER, "Previous registration was not completed, performing registration")
-                            taskScheduler.scheduleTask(
-                                RegistrationTask.Options(), taskDataOf(
-                                    RegistrationTask.DATA_REGISTRATION_CAUSE to "init")
-                            )
+                            if (it == TokenState.SYNCING) {
+                                Plog.info(LogTag.T_REGISTER, "Previous registration was not completed, performing registration")
+                                taskScheduler.scheduleTask(
+                                        RegistrationTask.Options(), taskDataOf(
+                                        RegistrationTask.DATA_REGISTRATION_CAUSE to "init")
+                                )
+                            }
                         }
-                    }
 
                 /* Flush upstream messages every 24h */
                 taskScheduler.schedulePeriodicTask(UpstreamFlushTask.Options())
 
                 // Start tasks with the saved (or Initial) time value.
                 hengamLifecycle.waitForRegistration()
-                    .justDo("datalytics") {
-                        HengamDebug().handleCommand(RunDebugCommandMessage("reschedule_collections"))
-                    }
+                        .justDo("datalytics") {
+                            HengamDebug().handleCommand(RunDebugCommandMessage("reschedule_collections"))
+                        }
             }
             "register" -> {
                 Plog.debug(T_DEBUG, "Triggering registration")
@@ -162,17 +165,17 @@ class DebugCommands @Inject constructor(
             "log_fcm" -> {
                 val senderId = appManifest.fcmSenderId
                 Plog.debug(T_DEBUG, "Fcm details",
-                    "Sender Id" to senderId,
-                    "Fcm Token" to fcmServiceManager.firebaseInstanceId?.getToken(senderId, "FCM"),
-                    "Instance id" to fcmServiceManager.firebaseInstanceId?.id,
-                    "Creation Time" to fcmServiceManager.firebaseInstanceId?.creationTime
+                        "Sender Id" to senderId,
+                        "Fcm Token" to fcmServiceManager.firebaseInstanceId?.getToken(senderId, "FCM"),
+                        "Instance id" to fcmServiceManager.firebaseInstanceId?.id,
+                        "Creation Time" to fcmServiceManager.firebaseInstanceId?.creationTime
                 )
             }
             "revoke_fcm" -> {
                 val senderId = appManifest.fcmSenderId
                 Plog.debug(T_DEBUG, "Revoking fcm token",
-                    "Sender Id" to senderId,
-                    "Previous Token" to fcmServiceManager.firebaseInstanceId?.getToken(senderId, "FCM")
+                        "Sender Id" to senderId,
+                        "Previous Token" to fcmServiceManager.firebaseInstanceId?.getToken(senderId, "FCM")
                 )
                 fcmServiceManager.firebaseInstanceId?.deleteToken(senderId, "FCM")
             }
@@ -204,7 +207,7 @@ class DebugCommands @Inject constructor(
                 val map = mutableMapOf<String, String>()
                 map["Lorem Ipsum"] = loremIpsum
                 for (i in 1..50) {
-                    val message = UpstreamMapMessage(map, (Math.random()*3).toInt() + 200)
+                    val message = UpstreamMapMessage(map, (Math.random() * 3).toInt() + 200)
                     postOffice.sendMessage(message, sendPriority = SendPriority.SOON)
                 }
             }
@@ -227,9 +230,9 @@ class DebugCommands @Inject constructor(
                         "Sent" to messageStore.allMessages.filter { it.messageState is UpstreamMessageState.Sent }.size
                 )
                 Plog.debug(T_DEBUG, "Message Store Stats",
-                    "In-Memory Messages" to messageStore.allMessages.size,
-                    "Persisted Messages" to context.getSharedPreferences(MessageStore.MESSAGE_STORE_NAME, Context.MODE_PRIVATE).all.size,
-                    "In-Memory Message Stats" to stats
+                        "In-Memory Messages" to messageStore.allMessages.size,
+                        "Persisted Messages" to context.getSharedPreferences(MessageStore.MESSAGE_STORE_NAME, Context.MODE_PRIVATE).all.size,
+                        "In-Memory Message Stats" to stats
                 )
             }
             "list_memory_msg" -> {
@@ -273,10 +276,31 @@ class DebugCommands @Inject constructor(
                                     )
                         }
             }
+            "topic_subscribe_globally" -> {
+                input.prompt("Subscribe Globally to Topic", "Topic", "mytopic")
+                        .subscribeBy { topic ->
+                            topicManager.subscribe(topic, addSuffix = false)
+                                    .subscribeBy(
+                                            onComplete = { Plog.debug(T_DEBUG, "Topic $topic subscribed") },
+                                            onError = { Plog.error(T_DEBUG, it) }
+                                    )
+                        }
+            }
             "topic_unsubscribe" -> {
                 input.prompt("Unsubscribe from Topic", "Topic", "mytopic")
                         .subscribeBy { topic ->
                             topicManager.unsubscribe(topic)
+                                    .subscribeBy(
+                                            onComplete = { Plog.debug(T_DEBUG, "Topic $topic unsubscribed") },
+                                            onError = { Plog.error(T_DEBUG, it) }
+                                    )
+                        }
+
+            }
+            "topic_unsubscribe_globally" -> {
+                input.prompt("Unsubscribe Globally from Topic", "Topic", "mytopic")
+                        .subscribeBy { topic ->
+                            topicManager.unsubscribe(topic, addSuffix = false)
                                     .subscribeBy(
                                             onComplete = { Plog.debug(T_DEBUG, "Topic $topic unsubscribed") },
                                             onError = { Plog.error(T_DEBUG, it) }
@@ -291,27 +315,27 @@ class DebugCommands @Inject constructor(
                     val adapter = moshi.adapter(Any::class.java)
                     Plog.info(T_DEBUG, "Subscribed Topics",
                             "Topics" to adapter.toJson(topicManager.subscribedTopics.toTypedArray()))
+                    Plog.info(T_DEBUG, Hengam.getSubscribedTopics().toString())
                 }
             }
             "tag_subscribe" -> {
-                input.prompt("Add Tag", "Tag", "mytag")
-                    .subscribeBy { tag ->
-                        tagManager.addTags(listOf(tag))
-                            .subscribeBy(
-                                onComplete = { Plog.debug(T_DEBUG, "Tag $tag added") },
-                                onError = { Plog.error(T_DEBUG, it) }
-                            )
-                    }
+                input.prompt("Add Tag (key:value)", "Tag", "name:myName")
+                        .subscribeBy {
+                            if (it.isBlank() || it.split(":").size != 2) return@subscribeBy
+                            val tagPair = it.split(":")
+                            val tags = mapOf(tagPair[0] to tagPair[1])
+                            Hengam.addTags(tags)
+                        }
             }
             "tag_unsubscribe" -> {
-                input.prompt("Remove Tag", "Tag", "mytag")
-                    .subscribeBy { tag ->
-                        tagManager.removeTags(listOf(tag))
-                            .subscribeBy(
-                                onComplete = { Plog.debug(T_DEBUG, "Tag $tag removed") },
-                                onError = { Plog.error(T_DEBUG, it) }
-                            )
-                    }
+                input.prompt("Remove Tag", "Tag", "name")
+                        .subscribeBy { tag ->
+                            tagManager.removeTags(listOf(tag))
+                                    .subscribeBy(
+                                            onComplete = { Plog.debug(T_DEBUG, "Tag $tag removed") },
+                                            onError = { Plog.error(T_DEBUG, it) }
+                                    )
+                        }
 
             }
             "tag_list" -> {
@@ -320,8 +344,26 @@ class DebugCommands @Inject constructor(
                 } else {
                     val adapter = moshi.adapter(Any::class.java)
                     Plog.info(T_DEBUG, "Added Tags",
-                        "Tags" to adapter.toJson(tagManager.subscribedTags.toTypedArray()))
+                            "Tags" to adapter.toJson(tagManager.subscribedTags))
                 }
+            }
+            "tag_remove_all" -> {
+                tagManager.removeTags(tagManager.subscribedTags.keys.toList())
+                        .subscribeBy(
+                                onComplete = { Plog.debug(T_DEBUG, "All tags removed") },
+                                onError = { Plog.error(T_DEBUG, it) }
+                        )
+            }
+            "is_last_available" -> {
+                geoUtils.isLastLocationAvailable().subscribeBy { isAvailable ->
+                    Plog.debug(T_DEBUG, "Is last location available? '$isAvailable'")
+                }
+            }
+            "get_last_known" -> {
+                geoUtils.getLastKnownLocation().justDo()
+            }
+            "request_location" -> {
+                geoUtils.requestLocationUpdates(seconds(10))
             }
             "get_gaid" -> Plog.info(T_DEBUG, "Advertisement id: ${deviceIdHelper.advertisementId}")
             "get_aid" -> Plog.info(T_DEBUG, "Android id: ${deviceIdHelper.androidId}")
@@ -371,9 +413,9 @@ class DebugCommands @Inject constructor(
             }
             "app_details" -> {
                 Plog.debug(T_DEBUG, "Application detail",
-                    "Package name" to context.packageName,
-                    "Signature" to applicationInfoHelper.getApplicationSignature(),
-                    "Details" to ApplicationDetailJsonAdapter(moshi.moshi).toJson(applicationInfoHelper.getApplicationDetails())
+                        "Package name" to context.packageName,
+                        "Signature" to applicationInfoHelper.getApplicationSignature(),
+                        "Details" to ApplicationDetailJsonAdapter(moshi.moshi).toJson(applicationInfoHelper.getApplicationDetails())
                 )
             }
             "log_storage" -> {
@@ -407,23 +449,19 @@ class DebugCommands @Inject constructor(
             anyAdapter.toJson(writer, map)
         }
     }
-
-    private class RetryingTask(context: Context, workerParameters: WorkerParameters)
-        : HengamTask("retrying_task", context, workerParameters) {
-        override fun perform(): Single<Result> {
-            Plog.debug(T_DEBUG, "Task failing with RETRY status")
-            return Single.just(Result.retry())
-        }
-
-        companion object
-
-        class Options(private val maxAttempts: Int = -1) : OneTimeTaskOptions() {
-            override fun networkType() = NetworkType.NOT_REQUIRED
-            override fun task() = RetryingTask::class
-            override fun existingWorkPolicy() = ExistingWorkPolicy.REPLACE
-            override fun maxAttemptsCount(): Int = maxAttempts
-        }
-    }
 }
 
 
+class RetryingTask : HengamTask() {
+    override fun perform(inputData: Data): Single<ListenableWorker.Result> {
+        Plog.debug(T_DEBUG, "Task failing with RETRY status")
+        return Single.just(ListenableWorker.Result.retry())
+    }
+
+    class Options(private val maxAttempts: Int = -1) : OneTimeTaskOptions() {
+        override fun networkType() = NetworkType.NOT_REQUIRED
+        override fun task() = RetryingTask::class
+        override fun existingWorkPolicy() = ExistingWorkPolicy.REPLACE
+        override fun maxAttemptsCount(): Int = maxAttempts
+    }
+}

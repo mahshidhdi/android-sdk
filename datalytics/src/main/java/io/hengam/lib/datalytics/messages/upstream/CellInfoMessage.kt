@@ -122,6 +122,7 @@ object CellArrayFactory {
         factory.registerSubtype("wcdma", CellArrayWCDMA::class.java) { CellArrayWCDMAJsonAdapter(it) }
         factory.registerSubtype("cdma", CellArrayCDMA::class.java) { CellArrayCDMAJsonAdapter(it) }
         factory.registerSubtype("gsm", CellArrayGSM::class.java) { CellArrayGSMJsonAdapter(it) }
+        factory.registerSubtype("unknown", CellArrayUnknown::class.java) { CellArrayUnknownJsonAdapter(it) }
         return factory
     }
 }

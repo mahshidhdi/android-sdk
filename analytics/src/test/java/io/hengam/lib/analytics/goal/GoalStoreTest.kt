@@ -4,6 +4,8 @@ import android.content.Context
 import io.hengam.lib.internal.HengamMoshi
 import io.hengam.lib.analytics.SessionFragmentInfo
 import io.hengam.lib.utils.HengamStorage
+import io.hengam.lib.utils.rx.justDo
+import io.hengam.lib.utils.test.TestUtils
 import io.hengam.lib.utils.test.mocks.MockSharedPreference
 import io.mockk.every
 import io.mockk.mockk
@@ -20,6 +22,8 @@ class GoalStoreTest {
     private val goalFragmentNameExtractor: GoalFragmentObfuscatedNameExtractor = mockk(relaxed = true)
     private val storage = HengamStorage(moshi, MockSharedPreference())
 
+    private val cpuThread = TestUtils.mockCpuThread()
+
     @Before
     fun setUp() {
         goalStore = GoalStore(context, moshi, goalFragmentNameExtractor, storage)
@@ -35,8 +39,9 @@ class GoalStoreTest {
         goalStore.updateGoals(getGoals(listOf(
             firstActivityReachGoal,
             secondButtonClickGoal
-        )))
+        ))).justDo()
 
+        cpuThread.triggerActions()
         assertEquals(2, goalStore.definedGoals.size)
         assertEquals(2, goalStore.definedGoalsDataSet.size)
         assert(goalStore.definedGoals.contains(firstActivityReachGoal))
@@ -48,10 +53,11 @@ class GoalStoreTest {
         goalStore.updateGoals(getGoals(listOf(
             firstActivityReachGoal,
             secondButtonClickGoal
-        )))
+        ))).justDo()
 
-        goalStore.updateGoals(getGoals(listOf(firstActivityReachGoalWithDifferentViewGoals)))
+        goalStore.updateGoals(getGoals(listOf(firstActivityReachGoalWithDifferentViewGoals))).justDo()
 
+        cpuThread.triggerActions()
         assertEquals(2, goalStore.definedGoals.size)
         assertEquals(2, goalStore.definedGoalsDataSet.size)
 
@@ -76,8 +82,9 @@ class GoalStoreTest {
                 activityClassName = "SimpleActivity"
             )))
 
-        goalStore.updateGoals(getGoals(listOf(buttonClickGoalWithSameNameAsFirstActivityReachGoal)))
+        goalStore.updateGoals(getGoals(listOf(buttonClickGoalWithSameNameAsFirstActivityReachGoal))).justDo()
 
+        cpuThread.triggerActions()
         assertEquals(2, goalStore.definedGoals.size)
         assertEquals(2, goalStore.definedGoalsDataSet.size)
 
@@ -94,10 +101,14 @@ class GoalStoreTest {
         goalStore.updateGoals(getGoals(listOf(
             firstActivityReachGoal,
             secondButtonClickGoal
-        )))
+        ))).justDo()
+
+        cpuThread.triggerActions()
         assertEquals(7, goalStore.definedViewGoalsDataSet.size)
 
-        goalStore.updateGoals(getGoals(listOf(firstActivityReachGoalWithDifferentViewGoals)))
+        goalStore.updateGoals(getGoals(listOf(firstActivityReachGoalWithDifferentViewGoals))).justDo()
+
+        cpuThread.triggerActions()
         assertEquals(4, goalStore.definedViewGoalsDataSet.size)
     }
 
@@ -109,34 +120,40 @@ class GoalStoreTest {
             firstActivityReachGoalWithDifferentName,
             fragmentWithLayoutsSecondButtonClickGoal,
             fragmentBFirstReachGoal
-        )))
+        ))).justDo()
+        cpuThread.triggerActions()
 
         goalStore.removeGoals(setOf(
             "firstActivityReachGoalWithDifferentName",
-            "fragmentBFirstReachGoal"))
+            "fragmentBFirstReachGoal"
+        )).justDo()
+        cpuThread.triggerActions()
 
         assertEquals(3, goalStore.definedGoals.size)
         assertEquals(3, goalStore.definedGoalsDataSet.size)
+
         // viewGoalDatas are removed as well
         assertEquals(12, goalStore.definedViewGoalsDataSet.size)
-
     }
 
     @Test
     fun initializeViewGoalsDataSet_extractsViewGoalsDataFromDefinedGoals() {
         goalStore.initializeViewGoalsDataSet()
+
+        cpuThread.triggerActions()
         assertEquals(0, goalStore.definedViewGoalsDataSet.size)
 
         goalStore.updateGoals(getGoals(listOf(
             firstActivityReachGoal,
             secondButtonClickGoal
-        )))
+        ))).justDo()
+
         goalStore.initializeViewGoalsDataSet()
 
+        cpuThread.triggerActions()
         assertEquals(7, goalStore.definedViewGoalsDataSet.size)
 
         var viewGoals = firstActivityReachGoal.viewGoals
-
         for (viewGoal in viewGoals) {
             assert(goalStore.definedViewGoalsDataSet.containsKey(
                 ViewGoalData(
@@ -169,15 +186,19 @@ class GoalStoreTest {
     fun initializeGoalsDataSet_extractsGoalsDataFromDefinedGoals() {
         goalStore.initializeViewGoalsDataSet()
         goalStore.initializeGoalsDataSet()
+
+        cpuThread.triggerActions()
         assertEquals(0, goalStore.definedGoalsDataSet.size)
 
         goalStore.updateGoals(getGoals(listOf(
             firstActivityReachGoal,
             secondButtonClickGoal
-        )))
+        ))).justDo()
+
         goalStore.initializeViewGoalsDataSet()
         goalStore.initializeGoalsDataSet()
 
+        cpuThread.triggerActions()
         assertEquals(2, goalStore.definedGoalsDataSet.size)
     }
 
@@ -186,82 +207,98 @@ class GoalStoreTest {
         goalStore.updateGoals(getGoals(listOf(
             firstActivityReachGoal,
             firstActivityReachGoalWithDifferentName
-        )))
+        ))).justDo()
         goalStore.initializeViewGoalsDataSet()
 
+        cpuThread.triggerActions()
         assertEquals(6, goalStore.definedViewGoalsDataSet.size)
     }
 
     @Test
     fun getActivityReachGoals_returnsDefinedGoalsWithActivityReachTypeAndGivenActivityName() {
         // empty goals
-        var goals = goalStore.getActivityReachGoals("activityName")
-        assertEquals(0, goals.size)
+        goalStore.getActivityReachGoals("activityName")
+            .test()
+            .assertValueCount(0)
 
         // no activityReachGoals
-        goalStore.updateGoals(getGoals(listOf(secondButtonClickGoal)))
-        goals = goalStore.getActivityReachGoals("SimpleActivity")
-        assertEquals(0, goals.size)
+        goalStore.updateGoals(getGoals(listOf(secondButtonClickGoal))).justDo()
+        cpuThread.triggerActions()
+        goalStore.getActivityReachGoals("SimpleActivity")
+            .test()
+            .assertValueCount(0)
 
         // two different 'SimpleActivity' reach goals
         goalStore.updateGoals(getGoals(listOf(
             firstActivityReachGoal,
             firstActivityReachGoalWithDifferentName
-        )))
-        goals = goalStore.getActivityReachGoals("SimpleActivity")
-        assertEquals(2, goals.size)
+        ))).justDo()
+        cpuThread.triggerActions()
+        goalStore.getActivityReachGoals("SimpleActivity")
+            .test()
+            .assertValueCount(2)
 
         // 'SimpleActivity' but different kind of goal
-        goalStore.updateGoals(getGoals(listOf(firstButtonClickGoal)))
-        goals = goalStore.getActivityReachGoals("SimpleActivity")
-        assertEquals(2, goals.size)
+        goalStore.updateGoals(getGoals(listOf(firstButtonClickGoal))).justDo()
+        cpuThread.triggerActions()
+        goalStore.getActivityReachGoals("SimpleActivity")
+            .test()
+            .assertValueCount(2)
     }
 
     @Test
     fun getFragmentReachGoals_returnsDefinedGoalsWithFragmentReachTypeAndGivenFragmentInfo() {
         // empty goals
-        var goals = goalStore.getFragmentReachGoals(
+        goalStore.getFragmentReachGoals(
             SessionFragmentInfo("fragmentName", "fragmentId", "activityName")
         )
+            .test()
+            .assertValueCount(0)
         verify(exactly = 0) { goalFragmentNameExtractor.getFragmentObfuscatedName(any()) }
-        assertEquals(0, goals.size)
 
         // no fragmentReachGoals
-        goalStore.updateGoals(getGoals(listOf(fragmentWithLayoutsSecondButtonClickGoal)))
-        goals = goalStore.getFragmentReachGoals(
+        goalStore.updateGoals(getGoals(listOf(fragmentWithLayoutsSecondButtonClickGoal))).justDo()
+        cpuThread.triggerActions()
+        goalStore.getFragmentReachGoals(
             SessionFragmentInfo(
                 "FragmentA",
                 "flContainer",
                 "MultipleFrameLayoutActivity"
             )
         )
-        assertEquals(0, goals.size)
+            .test()
+            .assertValueCount(0)
 
         // two different fragment reach goals with the same FragmentInfo
         goalStore.updateGoals(getGoals(listOf(
             fragmentBFirstReachGoal,
             fragmentBFirstReachGoalWithDifferentName
-        )))
-        goals = goalStore.getFragmentReachGoals(
+        ))).justDo()
+        cpuThread.triggerActions()
+        goalStore.getFragmentReachGoals(
             SessionFragmentInfo(
                 "FragmentB",
                 "flContainer",
                 "MultipleFrameLayoutActivity"
             )
         )
-        assertEquals(2, goals.size)
+            .test()
+            .assertValueCount(2)
     }
 
     @Test
     fun getButtonClickGoals_returnsDefinedGoalsWithButtonClickTypeAndGivenActivityName() {
         // empty goals
-        var goals = goalStore.getButtonClickGoals("activityName")
-        assertEquals(0, goals.size)
+        goalStore.getButtonClickGoals("activityName")
+            .test()
+            .assertValueCount(0)
 
         // no buttonClickGoals
-        goalStore.updateGoals(getGoals(listOf(firstActivityReachGoal)))
-        goals = goalStore.getButtonClickGoals("SimpleActivity")
-        assertEquals(0, goals.size)
+        goalStore.updateGoals(getGoals(listOf(firstActivityReachGoal))).justDo()
+        cpuThread.triggerActions()
+        goalStore.getButtonClickGoals("SimpleActivity")
+            .test()
+            .assertValueCount(0)
 
         // two different ButtonClickGoals for the same button
         goalStore.updateGoals(
@@ -270,38 +307,45 @@ class GoalStoreTest {
                 firstButtonClickGoal2,
                 firstButtonClickGoalWithDifferentName,
                 secondButtonClickGoal
-            ))
-        goals = goalStore.getButtonClickGoals("SimpleActivity")
-        assertEquals(3, goals.size)
+            )).justDo()
+        cpuThread.triggerActions()
+        goalStore.getButtonClickGoals("SimpleActivity")
+            .test()
+            .assertValueCount(3)
     }
 
     @Test
     fun getButtonClickGoals_goalWithGivenActivityNameShouldHaveNullFragmentInfo() {
         // Same activity but in a fragment
-        goalStore.updateGoals(getGoals(listOf(fragmentWithLayoutsSecondButtonClickGoal)))
-        val goals = goalStore.getButtonClickGoals("MultipleFrameLayoutActivity")
-        assertEquals(0, goals.size)
+        goalStore.updateGoals(getGoals(listOf(fragmentWithLayoutsSecondButtonClickGoal))).justDo()
+        cpuThread.triggerActions()
+        goalStore.getButtonClickGoals("MultipleFrameLayoutActivity")
+            .test()
+            .assertValueCount(0)
     }
 
     @Test
     fun getButtonClickGoals_returnsDefinedGoalsWithButtonClickTypeAndGivenFragmentInfo() {
         // empty goals
-        var goals = goalStore.getButtonClickGoals(
+        goalStore.getButtonClickGoals(
             SessionFragmentInfo("fragmentName", "fragmentId", "activityName")
         )
+            .test()
+            .assertValueCount(0)
         verify(exactly = 0) { goalFragmentNameExtractor.getFragmentObfuscatedName(any()) }
-        assertEquals(0, goals.size)
 
         // same fragment different goalType
-        goalStore.updateGoals(getGoals(listOf(fragmentWithLayoutsFirstReachGoal)))
-        goals = goalStore.getButtonClickGoals(
+        goalStore.updateGoals(getGoals(listOf(fragmentWithLayoutsFirstReachGoal))).justDo()
+        cpuThread.triggerActions()
+        goalStore.getButtonClickGoals(
             SessionFragmentInfo(
                 "FragmentA",
                 "flContainer",
                 "MultipleFrameLayoutActivity"
             )
         )
-        assertEquals(0, goals.size)
+            .test()
+            .assertValueCount(0)
 
         // two different buttonClick goals with the same FragmentInfo
         goalStore.updateGoals(getGoals(listOf(
@@ -309,90 +353,109 @@ class GoalStoreTest {
             fragmentWithLayoutsSecondButtonClickGoal,
             fragmentWithLayoutsSecondButtonClickGoal2,
             fragmentWithLayoutsSecondButtonClickGoalWithDifferentName
-        )))
-        goals = goalStore.getButtonClickGoals(
+        ))).justDo()
+        cpuThread.triggerActions()
+        goalStore.getButtonClickGoals(
             SessionFragmentInfo(
                 "FragmentWithLayouts",
                 "flContainer",
                 "MultipleFrameLayoutActivity"
             )
         )
-        assertEquals(3, goals.size)
+            .test()
+            .assertValueCount(3)
     }
 
     @Test
     fun viewGoalsByActivity_returnsTargetedViewGoalsInTheGivenActivity() {
         // empty goals
         goalStore.initializeViewGoalsDataSet()
-        var viewGoals = goalStore.viewGoalsByActivity("activityName")
-        assertEquals(0, viewGoals.size)
+        cpuThread.triggerActions()
+        goalStore.viewGoalsByActivity("activityName")
+            .test()
+            .assertValueCount(0)
 
         // viewGoals of an activity in multiple Goals
         goalStore.updateGoals(getGoals(listOf(
             secondButtonClickGoal,
             fragmentWithLayoutsSecondButtonClickGoal
-        )))
+        ))).justDo()
         goalStore.initializeViewGoalsDataSet()
-        viewGoals = goalStore.viewGoalsByActivity("SimpleActivity")
-        assertEquals(4, viewGoals.size)
+        cpuThread.triggerActions()
+        goalStore.viewGoalsByActivity("SimpleActivity")
+            .test()
+            .assertValueCount(4)
 
         // same viewGoal in different goals
-        goalStore.updateGoals(getGoals(listOf(firstButtonClickGoal2)))
+        goalStore.updateGoals(getGoals(listOf(firstButtonClickGoal2))).justDo()
         goalStore.initializeViewGoalsDataSet()
-        viewGoals = goalStore.viewGoalsByActivity("SimpleActivity")
-        assertEquals(5, viewGoals.size)
+        cpuThread.triggerActions()
+        goalStore.viewGoalsByActivity("SimpleActivity")
+            .test()
+            .assertValueCount(5)
 
         // target activity but in a fragment
-        goalStore.updateGoals(getGoals(listOf(fragmentWithLayoutsSecondButtonClickGoal2)))
+        goalStore.updateGoals(getGoals(listOf(fragmentWithLayoutsSecondButtonClickGoal2))).justDo()
         goalStore.initializeViewGoalsDataSet()
-        viewGoals = goalStore.viewGoalsByActivity("MultipleFrameLayoutActivity")
-        assertEquals(0, viewGoals.size)
+        cpuThread.triggerActions()
+        goalStore.viewGoalsByActivity("MultipleFrameLayoutActivity")
+            .test()
+            .assertValueCount(0)
     }
 
     @Test
     fun viewGoalsByActivity_viewGoalWithGivenActivityNameShouldHaveNullFragmentInfo() {
         // target activity but in a fragment
-        goalStore.updateGoals(getGoals(listOf(fragmentWithLayoutsSecondButtonClickGoal2)))
+        goalStore.updateGoals(getGoals(listOf(fragmentWithLayoutsSecondButtonClickGoal2))).justDo()
         goalStore.initializeViewGoalsDataSet()
-        val viewGoals = goalStore.viewGoalsByActivity("MultipleFrameLayoutActivity")
-        assertEquals(0, viewGoals.size)
+        cpuThread.triggerActions()
+
+        goalStore.viewGoalsByActivity("MultipleFrameLayoutActivity")
+            .test()
+            .assertValueCount(0)
     }
 
     @Test
     fun viewGoalsByFragment_returnsTargetedViewGoalsInTheGivenFragment() {
         // empty goals
         goalStore.initializeViewGoalsDataSet()
-        var viewGoals = goalStore.viewGoalsByFragment(
+        cpuThread.triggerActions()
+        goalStore.viewGoalsByFragment(
             SessionFragmentInfo("fragmentName", "fragmentId", "activityName")
         )
-        assertEquals(0, viewGoals.size)
+            .test()
+            .assertValueCount(0)
 
         // viewGoals of a fragment in multiple Goals
         goalStore.updateGoals(getGoals(listOf(
             fragmentBFirstReachGoal,
             fragmentWithLayoutsFirstReachGoal
-        )))
+        ))).justDo()
         goalStore.initializeViewGoalsDataSet()
-        viewGoals = goalStore.viewGoalsByFragment(
+        cpuThread.triggerActions()
+        goalStore.viewGoalsByFragment(
             SessionFragmentInfo(
                 "FragmentB",
                 "flContainer",
                 "MultipleFrameLayoutActivity"
             )
         )
-        assertEquals(2, viewGoals.size)
+            .test()
+            .assertValueCount(2)
 
         // same viewGoal in different goals
-        goalStore.updateGoals(getGoals(listOf(fragmentBFirstReachGoalWithDifferentName)))
+        goalStore.updateGoals(getGoals(listOf(fragmentBFirstReachGoalWithDifferentName))).justDo()
         goalStore.initializeViewGoalsDataSet()
-        viewGoals = goalStore.viewGoalsByFragment(
+        cpuThread.triggerActions()
+        goalStore.viewGoalsByFragment(
             SessionFragmentInfo(
                 "FragmentB",
                 "flContainer",
                 "MultipleFrameLayoutActivity"
             )
         )
-        assertEquals(3, viewGoals.size)
+            .test()
+            .assertValueCount(3)
     }
 }
 

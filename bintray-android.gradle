@@ -17,13 +17,6 @@ install {
                     url licenseUrl
                 }
             }
-//            developers {
-//                developer {
-//                    id developerId
-//                    name developerName
-//                    email developerEmail
-//                }
-//            }
             scm {
                 connection gitUrl
                 developerConnection gitUrl
@@ -63,4 +56,3 @@ ext {
 }
 
 apply from : "$rootProject.projectDir/bintray.gradle"
-

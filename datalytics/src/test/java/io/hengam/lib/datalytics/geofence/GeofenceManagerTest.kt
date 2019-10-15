@@ -34,10 +34,9 @@ class GeofenceManagerTest {
     private val moshi: HengamMoshi = HengamMoshi()
     private val sharedPreferences: SharedPreferences = MockSharedPreference()
     private val taskScheduler: TaskScheduler = mockk(relaxed = true)
-    private val hengamLifecycle: HengamLifecycle = mockk(relaxed = true)
     private val hengamStorage: HengamStorage = HengamStorage(moshi, sharedPreferences)
     private val geofencingClient: GeofencingClient = mockk(relaxed = true)
-    private val geofenceManager =  GeofenceManager(context, postOffice, taskScheduler, hengamLifecycle, hengamStorage, moshi)
+    private val geofenceManager =  GeofenceManager(context, postOffice, taskScheduler, hengamStorage, moshi)
 
     @Before
     fun setUp() {
@@ -145,7 +144,7 @@ class GeofenceManagerTest {
         val (g2, gr2, _)
                 = addGeofence(testGeofence.copy(id = "g2", trigger = GeofenceMessage.GEOFENCE_TRIGGER_ENTER, triggerOnInit = true, dwellTime = seconds(2)))
         assertEquals(Geofence.GEOFENCE_TRANSITION_DWELL, g2.transitionType.captured)
-        assertEquals(GeofencingRequest.INITIAL_TRIGGER_DWELL, gr2.captured.initialTrigger)
+        assertEquals(GeofencingRequest.INITIAL_TRIGGER_DWELL or GeofencingRequest.INITIAL_TRIGGER_ENTER, gr2.captured.initialTrigger)
     }
 
     @Test

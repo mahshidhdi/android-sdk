@@ -94,8 +94,8 @@ class PopupDialogActivity : AppCompatActivity() {
 
         val builder = AlertDialog.Builder(context)
 
-        builder.setTitle(action.title)
-        builder.setMessage(action.content)
+        builder.setTitle(action.title ?: notificationMessage.bigTitle ?: notificationMessage.title)
+        builder.setMessage(action.content ?: notificationMessage.bigContent ?: notificationMessage.content)
 
         var buttonNumber = 0
         if (action.buttons.isNotEmpty()) {

@@ -9,6 +9,7 @@ import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
 import java.util.*
 import java.util.concurrent.TimeUnit
+import java.util.logging.Handler
 import kotlin.collections.ArrayList
 
 
@@ -24,6 +25,10 @@ open class Plogger(
 
     @Synchronized
     fun addHandler(handler: LogHandler) = logHandlers.add(handler)
+
+    @Synchronized
+    fun removeHandler(handler: LogHandler) = logHandlers.remove(handler)
+
 
     @Synchronized
     fun removeAllHandlers() = logHandlers.clear()

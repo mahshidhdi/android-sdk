@@ -126,7 +126,7 @@ class GeoUtils @Inject constructor(
     }
 
     @SuppressLint("MissingPermission")
-    private fun requestLocationUpdates(timeout: Time) {
+    fun requestLocationUpdates(timeout: Time) {
         Plog.trace(T_LOCATION, "Requesting location update")
         val locationRequest = LocationRequest.create().apply {
             interval = LOCATION_UPDATE_INTERVAL
@@ -135,7 +135,7 @@ class GeoUtils @Inject constructor(
             numUpdates = 1
         }
         locationRequest.setExpirationDuration(timeout.toMillis())
-        fusedLocationProviderClient.requestLocationUpdates(locationRequest, this, Looper.getMainLooper())   // TODO this shouldn't be main looper
+        fusedLocationProviderClient.requestLocationUpdates(locationRequest, this, Looper.getMainLooper())
     }
 
     override fun onLocationResult(locationResult: LocationResult?) {
@@ -144,7 +144,7 @@ class GeoUtils @Inject constructor(
                 // it.lastLocation could be null even though kotlin doesn't recognize it
                 val nullableLocation: Location? = it.lastLocation
                 nullableLocation?.let { location ->
-                    Plog.trace(T_LOCATION, "New location received ${System.currentTimeMillis()}",
+                    Plog.debug(T_LOCATION, "New location received ${System.currentTimeMillis()}",
                         "Lat" to location.latitude,
                         "Long" to location.longitude
                     )

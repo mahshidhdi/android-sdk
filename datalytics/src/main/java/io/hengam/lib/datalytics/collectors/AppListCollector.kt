@@ -30,16 +30,8 @@ class AppListCollector @Inject constructor(
         @SuppressLint("CheckResult")
         get() {
             return httpUtils.request(hengamConfig.appListBlackListUrl)
-                    .onErrorResumeNext { ex ->
-                        if (ex is HttpUtils.HttpError || ex is IOException) {
-                            if (isFinalAttempt) {
-                                Single.just("[]")
-                            } else {
-                                Single.error(CollectionRetryRequiredError("Request for app list black list failed", ex))
-                            }
-                        } else {
-                            Single.error(ex)
-                        }
+                    .onErrorResumeNext {
+                        Single.just("[]")
                     }
                     .map {
                         val adapter: JsonAdapter<List<String>> = hengamMoshi.moshi.adapter(Types.newParameterizedType(List::class.java, String::class.java))

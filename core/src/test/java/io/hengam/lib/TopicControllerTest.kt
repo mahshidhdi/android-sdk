@@ -6,7 +6,7 @@ import org.junit.Test
 
 class TopicControllerTest {
     private val topicManager: TopicManager = mockk(relaxed = true)
-    private val topicController = TopicController(topicManager, mockk(relaxed = true))
+    private val topicController = TopicController(topicManager)
 
     @Test
     fun handleUpdateTopicMessage_CallsSubscribeAndUnsubscribeForTopicsInMessage() {
@@ -18,11 +18,11 @@ class TopicControllerTest {
         topicController.handleUpdateTopicMessage(message)
 
         verifyAll {
-            topicManager.subscribe("subscribe1")
-            topicManager.subscribe("subscribe2")
-            topicManager.subscribe("subscribe3")
-            topicManager.unsubscribe("unsubscribe1")
-            topicManager.unsubscribe("unsubscribe2")
+            topicManager.subscribe("subscribe1", addSuffix = false)
+            topicManager.subscribe("subscribe2", addSuffix = false)
+            topicManager.subscribe("subscribe3", addSuffix = false)
+            topicManager.unsubscribe("unsubscribe1", addSuffix = false)
+            topicManager.unsubscribe("unsubscribe2", addSuffix = false)
         }
     }
 

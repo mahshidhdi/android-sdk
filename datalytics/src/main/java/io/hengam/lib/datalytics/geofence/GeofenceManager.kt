@@ -38,10 +38,10 @@ class GeofenceManager @Inject constructor(
         private val context: Context,
         private val postOffice: PostOffice,
         private val taskScheduler: TaskScheduler,
-        hengamLifecycle: HengamLifecycle,
         hengamStorage: HengamStorage,
         hengamMoshi: HengamMoshi
 ) {
+
     /**
      * All added geofences are stored here. Geofences stored here may not have been successfully
      * registered with the [GeofencingClient] or may have been unregistered for a number of reasons,
@@ -77,12 +77,6 @@ class GeofenceManager @Inject constructor(
     )
 
     private val geofencingClient: GeofencingClient by lazy { LocationServices.getGeofencingClient(context) }
-
-    init {
-        // We need to re-register all geofences on device boot
-        // (https://developer.android.com/training/location/geofencing#re-register-geofences-only-when-required)
-        hengamLifecycle.onBootCompleted.justDo(T_DATALYTICS, T_GEOFENCE) { this.ensureGeofencesAreRegistered().justDo(T_DATALYTICS, T_GEOFENCE) }
-    }
 
     /**
      * Adds a geofence (defined by a [GeofenceMessage] object) and registers it with the [GeofencingClient].
@@ -240,7 +234,7 @@ class GeofenceManager @Inject constructor(
                     setInitialTrigger(when (transitionType) {
                         GEOFENCE_TRANSITION_ENTER -> INITIAL_TRIGGER_ENTER
                         GEOFENCE_TRANSITION_EXIT -> INITIAL_TRIGGER_EXIT
-                        GEOFENCE_TRANSITION_DWELL -> INITIAL_TRIGGER_DWELL
+                        GEOFENCE_TRANSITION_DWELL -> INITIAL_TRIGGER_DWELL or INITIAL_TRIGGER_ENTER
                         else -> GEOFENCE_TRANSITION_ENTER
                     })
                 } else {

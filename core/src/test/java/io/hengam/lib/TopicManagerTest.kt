@@ -27,7 +27,7 @@ class TopicManagerTest {
     private val hengamStorage: HengamStorage = mockk(relaxed = true)
     private val topicStore = MockPersistedSet<String>()
 
-    private val appToken = "apptoken";
+    private val appToken = "apptoken"
 
     private lateinit var topicManager: TopicManager
 
@@ -86,7 +86,7 @@ class TopicManagerTest {
         ioThread.triggerActions()
         cpuThread.triggerActions()
         subscription.assertComplete()
-        verifyTopics("topic1", "topic2", "topic3")
+        verifyTopics("topic1", "topic2", "topic3_$appToken")
         verifyTopicMessageSent("topic3", 0)
     }
 
@@ -119,7 +119,7 @@ class TopicManagerTest {
     @Test
     fun unsubscribe_OnSuccessWillRemoveTopicAndSendMessage() {
         setUpToSucceed()
-        setTopics("topic1", "topic2", "topic3")
+        setTopics("topic1", "topic2_$appToken", "topic3")
         val subscription = topicManager.unsubscribe("topic2").test()
         ioThread.triggerActions()
         cpuThread.triggerActions()

@@ -33,78 +33,46 @@ class TopicManager @Inject constructor(
     val subscribedTopics: Set<String> = topicStore
 
     /**
-     * Subscribe to a topic
-     *
-     * Will subscribe to a topic on all courier services (currently only FCM).
-     * The returned [Completable] will succeed when subscribing succeeds in all courier services.
-     *
-     * The subscribe operation is persisted and will be retried internally until successful.
-     *
-     * If the topic is successfully subscribed, the topic will be added to the topic list and
-     * a [TopicStatusMessage] message will be sent.
-     *
-     * @return A [Completable] which will complete when topic is subscribed
+     * Same as [subscribe], but it does not use [getTopicFullName] to make it internally for this appId.
+     * This function will exactly subscribe to the [topic]
      */
-    fun subscribe(topic: String): Completable {
-        /* Note: If you add further courier services here, keep in mind that the
-           subscription should be persisted and retried internally if failed  */
-        val topicFullName = getTopicFullName(topic)
-        val fcm = fcmTopicSubscriber.subscribeToTopic(topicFullName)
+    fun subscribe(topic: String, addSuffix: Boolean = true): Completable {
+        val topicActualName = if (addSuffix) getTopicFullName(topic) else topic
+        val fcm = fcmTopicSubscriber.subscribeToTopic(topicActualName)
+        return Completable.merge(listOf(fcm))
+                .subscribeOn(ioThread())
+                .observeOn(cpuThread())
+                .doOnSubscribe { Plog.debug(T_TOPIC, "Subscribing to topic $topicActualName") }
+                .doOnError {
+                    Plog.error(T_TOPIC, TopicSubscriptionException("Subscribing to topic failed in at least one of the couriers", it), "Topic" to topicActualName)
+                }
+                .doOnComplete {
+                    Plog.info(T_TOPIC, "Successfully subscribed to topic $topicActualName")
+                }
+                .doOnComplete { topicStore.add(topicActualName) }
+                .doOnComplete { sendTopicSubscribedMessage(topicActualName) }
+    }
+
+    /**
+     * Same as [unsubscribe], but it does not use [getTopicFullName] to make it internally for this appId.
+     * This function will exactly unSubscribe from the [topic]
+     */
+    fun unsubscribe(topic: String, addSuffix: Boolean = true): Completable {
+        val topicActualName = if (addSuffix) getTopicFullName(topic) else topic
+        val fcm = fcmTopicSubscriber.unsubscribeFromTopic(topicActualName)
 
         return Completable.merge(listOf(fcm))
                 .subscribeOn(ioThread())
                 .observeOn(cpuThread())
-                .doOnSubscribe { Plog.debug(T_TOPIC, "Subscribing to topic $topicFullName") }
+                .doOnSubscribe { Plog.info(T_TOPIC, "UnSubscribing from topic", "Topic" to topicActualName) }
                 .doOnError {
-                    Plog.error(T_TOPIC, TopicSubscriptionException("Subscribing to topic failed in at least one of the couriers", it),  "Topic" to topicFullName)
+                    Plog.error(T_TOPIC, TopicSubscriptionException("UnSubscribing from topic failed in at least one of the couriers", it), "Topic" to topicActualName)
                 }
                 .doOnComplete {
-                    Plog.info(T_TOPIC, "Successfully subscribed to topic $topicFullName")
+                    Plog.info(T_TOPIC, "Successfully unSubscribed from topic $topicActualName")
                 }
-                .doOnComplete { topicStore.add(topic) }
-                .doOnComplete { sendTopicSubscribedMessage(topicFullName) }
-    }
-
-    /**
-     * Unsubscribe from a topic
-     *
-     * Will unsubscribe from a topic on all courier services (currently only FCM).
-     * The returned [Completable] will succeed when unsubscribing succeeds in all courier services.
-     *
-     * The unsubscribe operation is persisted and will be retried internally until successful.
-     *
-     * If the topic is successfully unsubscribed, the topic will be removed from the topic list and
-     * a [TopicStatusMessage] message will be sent.
-     *
-     * @return A [Completable] which will complete when topic is unsubscribed
-     */
-    fun unsubscribe(topic: String): Completable {
-
-        val topicFullName = getTopicFullName(topic)
-        val fcm = fcmTopicSubscriber.unsubscribeFromTopic(topicFullName)
-
-        return Completable.merge(listOf(fcm))
-                .subscribeOn(ioThread())
-                .observeOn(cpuThread())
-                .doOnSubscribe { Plog.info(T_TOPIC, "Unsubscribing from topic", "Topic" to topicFullName) }
-                .doOnError {
-                    Plog.error(T_TOPIC,  TopicSubscriptionException("Unsubscribing from topic failed in at least one of the couriers", it), "Topic" to topicFullName)
-                }
-                .doOnComplete {
-                    Plog.info(T_TOPIC, "Successfully unSubscribed from topic $topicFullName")
-                }
-                .doOnComplete { topicStore.remove(topic) }
-                .doOnComplete { sendTopicUnSubscribedMessage(topicFullName) }
-    }
-
-    /**
-     * Subscribe to the broadcast topic
-     *
-     * Should be called after every successful registration
-     */
-    fun subscribeToBroadcast(){
-        subscribe(BROADCAST_TOPIC)
-            .justDo()
+                .doOnComplete { topicStore.remove(topicActualName) }
+                .doOnComplete { sendTopicUnSubscribedMessage(topicActualName) }
     }
 
     private fun sendTopicSubscribedMessage(topicFullName: String) {
@@ -115,9 +83,7 @@ class TopicManager @Inject constructor(
         postOffice.sendMessage(TopicStatusMessage(topicFullName, TopicStatusMessage.STATUS_UNSUBSCRIBED))
     }
 
-    private fun getTopicFullName(topic: String): String {
-        return topic + "_" + appManifest.appId
-    }
+    private fun getTopicFullName(topic: String) = "${topic}_${appManifest.appId}"
 }
 
 class TopicSubscriptionException(message: String, throwable: Throwable? = null) : Exception(message, throwable)

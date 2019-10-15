@@ -3,10 +3,6 @@ package io.hengam.lib.analytics.session
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-abstract class SessionFragmentParent {
-    abstract val fragmentFlows: MutableMap<String, MutableList<SessionFragment>>
-}
-
 /**
  * Since there can be multiple fragment layouts inside an activity (or fragment), the fragmentFlows
  * are stored using a map with keys being fragment IDs and values being sessionFragment lists.
@@ -20,9 +16,9 @@ class SessionActivity(
     @Json(name = "start_time") var startTime: Long,
     @Json(name = "original_start_time") var originalStartTime: Long,
     @Json(name = "duration") var duration: Long,
-    @Json(name = "fragment_flows") override var fragmentFlows: MutableMap<String, MutableList<SessionFragment>> = mutableMapOf(),
+    @Json(name = "fragment_flows") var fragmentFlows: MutableMap<String, MutableList<SessionFragment>> = mutableMapOf(),
     @Json(name = "src_notif") var sourceNotifMessageId: String? = null
-): SessionFragmentParent() {
+) {
     override fun toString(): String {
         return "SessionActivity(name='$name', originalStartTime='$originalStartTime', duration=$duration, fragmentFlows=$fragmentFlows)"
     }
@@ -34,8 +30,8 @@ class SessionFragment(
     @Json(name = "start_time") var startTime: Long,
     @Json(name = "original_start_time") var originalStartTime: Long,
     @Json(name = "duration") var duration: Long,
-    @Json(name = "fragment_flows") override var fragmentFlows: MutableMap<String, MutableList<SessionFragment>> = mutableMapOf()
-): SessionFragmentParent() {
+    @Json(name = "fragment_flows") var fragmentFlows: MutableMap<String, MutableList<SessionFragment>> = mutableMapOf()
+) {
     override fun toString(): String {
         return "SessionFragment(name='$name', originalStartTime='$originalStartTime', duration=$duration, fragmentFlows=$fragmentFlows)"
     }

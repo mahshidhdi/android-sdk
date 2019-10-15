@@ -165,7 +165,8 @@ class NotificationController @Inject constructor(
         val notifId = message.getNotificationId()
 
         val builder = Single.fromCallable {
-            if (!message.isUpdateNotification && notificationStatus[message.messageId] == NOTIFICATION_PUBLISHED) {
+            if (!message.isUpdateNotification && !message.allowDuplicates &&
+                    notificationStatus[message.messageId] == NOTIFICATION_PUBLISHED) {
                 throw DuplicateNotificationError("Attempted to show an already published notification")
             }
             notificationBuilderFactory.createNotificationBuilder(message)
@@ -304,7 +305,7 @@ class NotificationController @Inject constructor(
      * has already been processed.
      */
     private fun shouldIgnoreBecauseOfDuplicateMessageId(message: NotificationMessage): Boolean {
-        if (message.messageId in notificationStatus) {
+        if (!message.allowDuplicates && message.messageId in notificationStatus) {
             Plog.warn(T_NOTIF, "Skipping notification due to duplicate message Id", "Message Id" to message.messageId)
             return true
         }

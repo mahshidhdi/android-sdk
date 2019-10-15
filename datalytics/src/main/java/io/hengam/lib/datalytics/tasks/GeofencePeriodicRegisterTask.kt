@@ -1,9 +1,7 @@
 package io.hengam.lib.datalytics.tasks
 
 import android.content.Context
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.WorkerParameters
+import androidx.work.*
 import io.hengam.lib.Hengam
 import io.hengam.lib.datalytics.dagger.DatalyticsComponent
 import io.hengam.lib.datalytics.geofencePeriodicRegisterInterval
@@ -23,13 +21,14 @@ import io.reactivex.Single
  *
  * https://developer.android.com/training/location/geofencing#re-register-geofences-only-when-required
  */
-class GeofencePeriodicRegisterTask(context: Context, workerParameters: WorkerParameters)
-    : HengamTask("geofence_periodic_register", context, workerParameters) {
+class GeofencePeriodicRegisterTask: HengamTask() {
 
-    override fun perform(): Single<Result> {
+    override fun perform(inputData: Data): Single<ListenableWorker.Result> {
         val datalyticsComponent = HengamInternals.getComponent(DatalyticsComponent::class.java)
                 ?: throw ComponentNotAvailableException(Hengam.DATALYTICS)
-        return datalyticsComponent.geofenceManager().ensureGeofencesAreRegistered().toSingleDefault(Result.success())
+        return datalyticsComponent.geofenceManager()
+            .ensureGeofencesAreRegistered()
+            .toSingleDefault(ListenableWorker.Result.success())
     }
 
     class Options : PeriodicTaskOptions() {

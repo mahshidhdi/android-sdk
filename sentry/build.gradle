@@ -66,3 +66,4 @@ ext {
 }
 
 apply from : "$rootProject.projectDir/bintray-android.gradle"
+apply from : "$rootProject.projectDir/publish.gradle"

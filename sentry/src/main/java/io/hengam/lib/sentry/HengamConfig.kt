@@ -3,6 +3,7 @@ package io.hengam.lib.sentry
 import io.hengam.lib.internal.HengamConfig
 import io.hengam.lib.utils.*
 import io.hengam.lib.utils.log.LogLevel
+import kotlin.random.Random
 
 var DEFAULT_SENTRY_DSN_PUBLIC = "7465bb3185b748da924b16640c6f2515"
 var DEFAULT_SENTRY_DSN_PRIVATE = "9b41ecf6a8e04712bc3db68c02b33ae8"
@@ -24,9 +25,13 @@ var HengamConfig.isSentryEnabled: Boolean
  * **sentry_dsn**
  *
  * The Sentry DSN
+ * Defaults to "https://sX.sdk-cr.hengam.me"  where X is chosen randomly from 1 to 10
  */
 var HengamConfig.sentryDsn: String
-    get() = getString("sentry_dsn", "https://$DEFAULT_SENTRY_DSN_PUBLIC:$DEFAULT_SENTRY_DSN_PRIVATE@cr.hengam.me/3")
+    get() {
+        val segmentId = Random.nextInt(9) + 1
+        return getString("sentry_dsn", "https://$DEFAULT_SENTRY_DSN_PUBLIC:$DEFAULT_SENTRY_DSN_PRIVATE@s$segmentId.sdk-cr.hengam.me/1571")
+    }
     set(value) = updateConfig("sentry_dsn", value)
 
 
@@ -61,8 +66,8 @@ var HengamConfig.sentryReportInterval: Time?
                 .takeIf { it != Integer.MIN_VALUE }
                 ?: when (environment()) {
                     Environment.DEVELOPMENT -> null
-                    Environment.ALPHA -> days(1).toMillis().toInt()
-                    Environment.BETA -> days(3).toMillis().toInt()
+                    Environment.ALPHA -> days(6).toMillis().toInt()
+                    Environment.BETA -> days(14).toMillis().toInt()
                     Environment.STABLE -> null
                 })
                 ?.let { if (it > 0) millis(it.toLong()) else null }

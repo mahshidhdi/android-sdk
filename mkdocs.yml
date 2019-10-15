@@ -38,21 +38,22 @@ extra_css:
   - 'stylesheets/extra.css'
 
 pages:
-  - Documentation Status: doc-status.md
   - Code Style: code-style.md
   - Git: git.md
   - Versioning: versioning.md
-  - Config: config.md
   - Development Guide:
     - Project Structure: guide/structure.md
     - Initialization: guide/initialization.md
     - Dependency Injection: guide/dependency-injection.md
+    - Json Serialization: guide/moshi.md
     - Sending Messages: guide/sending-message.md
     - Receiving Messages: guide/receiving-message.md
     - Threads: guide/threads.md
     - Running Tasks: guide/tasks.md
     - Providing APIs for Developers: guide/hengam-api.md
     - Logging: guide/logging.md
+    - Storing Data: guide/storage.md
+    - Configurations: guide/config.md
   - Core Module:
     - Index: core/index.md
   - Notification Module:

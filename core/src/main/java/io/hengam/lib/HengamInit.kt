@@ -59,6 +59,8 @@ class CoreInitializer : HengamComponentInitializer() {
         /* Start couriers */
         core.courierLounge().initialize()
 
+        core.taskScheduler().scheduleStoredTasks()
+
         /* Perform registration */
         core.registrationManager().checkRegistration()
 

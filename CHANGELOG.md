@@ -1,18 +1,56 @@
 # Hengam SDK ChangeLog
 
-## Unreleased
+## 2.0.1 (21 Sep, 2019)
+
+#### Core
+- Instead of having a list of strings as user tag, now tag is a set of key/values (aka a json) that can be set for a user.
+- To validate plus users, `app token` will be a **encoded string that contains a validator** and will be validated at the SDK too.
+So if the manifest is correct, the app will be a valid one. Thus, the manifest is expected to be 3 parts separated by an @ after decoding.
+- Added API method `getSubscribedTags`, so the developer can see and remove all tags.
+
+
+## 2.0.0 (1 Sep, 2019)
+
+- Revert migrating project to AndroidX.
 
 #### Core
 - Add `package_name` and `platform` fields to all upstream parcels
+- Migrated back to `Android support`, in order to have a more efficient backward compatibility.
+- Implement Tags to allow users to be assigned to developer-defined tags in order to be used for
+  filtering when sending push messages.
+- Fixed problem with topic subscriber which didn't allow the SDK to subscribe to non-suffixed topics
+- Validate provided appId in the manifest file so that only Hengam Plus users be able to use SDK v2.
+- Try to execute one-time tasks once without scheduling them with WorkManager.
+- Schedule all tasks using a single `RxWorker` class called `HengamTaskPerformer`, instead of having 
+  a separate worker class for each one.
 
 #### Notification
 - Add `delay` field to Notification message
+- Add a `AppCompat` style for `PopupDialogActivity`.
+- Show notification title & content as action dialog title & content
 
 #### Datalytics
 - Add `rate_limit` field to Geofence messages
 - The values used for the Geofence message (`t71`) `trigger` field have been changed from 0 and 1 to
   1 and to.
 - Make the public-ip APIs configurable and change the default list to use the Hengam API first
+- Add task for periodically requesting location updates to have more accurate geofences (can be
+  configured).
+- Fix a Geofence reRegister bug on device boot
+- Add Android9+ appStandByBucket to `Floating Data`
+- Check for location permission on AndroidP+ devices when gathering WiFi state.
+- Add missing JsonAdapter for unknown cellInfo `CellArray` subType
+
+#### Analytics
+- Rewrite the module using RxJava
+- Move parent-fragment & enabled fragments logic to `SessionFragmentInfo` class.
+- Remove `FragmentContainer` class and use a string in `SessionFragmentInfo` class as containerId instead.
+- Check for view-less fragments in the notifier class and ignore them.
+- Put all the main thread code inside a try-catch block.
+
+#### LogCollection
+- Add a config value for the module to get automatically disabled after a certain time to be able to 
+  check the registration logs only.
 
 ## 2.0.0-beta03 (1 July, 2019)
 - Added a new module called **LogCollection** to collect SDK logs and send them to a private server for

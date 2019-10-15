@@ -50,6 +50,26 @@ val HengamConfig.geofencePeriodicRegisterInterval: Time
     get() = getLong("geofence_periodic_register_interval", 0)
             .takeIf { it > 0 }?.let { millis(it) } ?: days(3)
 
+
+/**
+ * **location_collection_interval**
+ *
+ * Determines the interval at which SDK should request for the device location
+ */
+val HengamConfig.locationCollectionInterval: Time
+    get() = getLong("location_collection_interval", 0)
+        .takeIf { it > 0 }?.let { millis(it) } ?: millis(0)
+
+
+/**
+ * **location_collection_enabled**
+ *
+ * Determines whether device location should be collected by the SDK.
+ */
+val HengamConfig.isLocationCollectionEnabled: Boolean get() =
+    locationCollectionInterval.time > 0
+
+
 /**
  * **screen_service_enabled**
  *

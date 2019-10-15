@@ -44,9 +44,9 @@ data class NotificationMessage(
         @Json(name="permanent") val permanentPush: Boolean = false,
         @Json(name="forcePublish") val forcePublish: Boolean = false,
         @Json(name="notif_channel_id") val notifChannelId: String? = null,
-        @Json(name = "cancel_update") val cancelUpdate: String? = null, // cancel update notifications saved
-        @Json(name = "delay_until") val delayUntil: String? = null, // only option is "open_app"
-        @Json(name = "delay") @Millis val delay: Time? = null,
+        @Json(name="cancel_update") val cancelUpdate: String? = null, // cancel update notifications saved
+        @Json(name="delay_until") val delayUntil: String? = null, // only option is "open_app"
+        @Json(name="delay") @Millis val delay: Time? = null,
 
         @Json(name="otk") val oneTimeKey: String? = null,
         @Json(name="tag") val tag: String? = null,
@@ -54,7 +54,14 @@ data class NotificationMessage(
         @Json(name="av_code") val updateToAppVersion: Long? = null,
 
         @Json(name="badge_count") val badgeState: Int? = null,
-        @Json(name="custom_content") val customContent: Map<String, Any?>? = null
+        @Json(name="custom_content") val customContent: Map<String, Any?>? = null,
+
+        /**
+         * If `true` allows the notification to be published even if it has a duplicate message id
+         * Useful for notification messages contained within Geofence messages.
+         * Is `false` by default
+         */
+        @Json(name="allow_multi_publish") val allowDuplicates: Boolean = false
 ) {
     val isUpdateNotification: Boolean get() = updateToAppVersion != null
 

@@ -1,8 +1,15 @@
 package io.hengam.lib.analytics.goal
 
+import android.view.View
+import android.widget.Switch
+import android.widget.TextView
+import io.hengam.lib.analytics.Constants
 import io.hengam.lib.analytics.GoalFragmentInfo
+import io.hengam.lib.analytics.LogTag
+import io.hengam.lib.utils.log.Plog
+import io.reactivex.Completable
 
-data class ViewGoalData (
+class ViewGoalData (
     var parentGoalName: String,
     val targetValues: List<ViewGoalTargetValue> = listOf(),
     var currentValue: String? = null,
@@ -26,6 +33,50 @@ data class ViewGoalData (
         if (goalFragmentInfo != null) result = 31 * result + goalFragmentInfo.hashCode()
         result = 31 * result + parentGoalName.hashCode()
         return result
+    }
+
+
+    /**
+     * updates [currentValue] with the value of the given view
+     *
+     */
+    fun updateValue(view: View): Completable {
+        return Completable.fromCallable {
+            var typeMisMatch = false
+            when (viewType) {
+                ViewGoalType.TEXT_VIEW -> {
+                    if (view is TextView) {
+                        currentValue = view.text.toString()
+                    } else {
+                        typeMisMatch = true
+                    }
+                }
+                ViewGoalType.SWITCH -> {
+                    if (view is Switch) {
+                        currentValue = view.isChecked.toString()
+                    } else {
+                        typeMisMatch = true
+                    }
+                }
+//                ViewGoalType.BUTTON -> {
+//                    if (view is Button) {
+//                        viewGoalData.currentValue = view.text.toString()
+//                    } else {
+//                        typeMisMatch = true
+//                    }
+//                }
+            }
+            if (typeMisMatch) {
+                Plog.error(
+                    LogTag.T_ANALYTICS, LogTag.T_ANALYTICS_GOAL, "Type mismatch occurred while processing updated view goal data, the view goal will be ignored",
+                    "Goal Name" to parentGoalName,
+                    "View Id" to viewID,
+                    "Expected Type" to viewType,
+                    "Actual Type" to view.javaClass.simpleName
+                )
+                currentValue = Constants.ANALYTICS_ERROR_VIEW_GOAL
+            }
+        }
     }
 }
 

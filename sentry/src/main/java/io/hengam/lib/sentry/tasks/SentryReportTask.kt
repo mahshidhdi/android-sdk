@@ -1,9 +1,8 @@
 package io.hengam.lib.sentry.tasks
 
 import android.content.Context
-import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.*
 import androidx.work.NetworkType
-import androidx.work.WorkerParameters
 import io.hengam.lib.Hengam
 import io.hengam.lib.internal.HengamInternals
 import io.hengam.lib.dagger.CoreComponent
@@ -21,10 +20,9 @@ import kotlin.reflect.KClass
  *
  * The task should only be run in Alpha or Beta environments
  */
-class SentryReportTask(context: Context, workerParameters: WorkerParameters)
-    : HengamTask("sentry_report", context, workerParameters) {
+class SentryReportTask: HengamTask() {
 
-    override fun perform(): Single<Result> {
+    override fun perform(inputData: Data): Single<ListenableWorker.Result> {
         val core = HengamInternals.getComponent(CoreComponent::class.java)
                 ?: throw ComponentNotAvailableException(Hengam.CORE)
 
@@ -78,7 +76,7 @@ class SentryReportTask(context: Context, workerParameters: WorkerParameters)
                 .putInt("sentry_report_count", reportCount + 1)
                 .apply()
 
-        return Single.just(Result.success())
+        return Single.just(ListenableWorker.Result.success())
     }
 
     private fun timeAgo(timeAgo: Time): String {

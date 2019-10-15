@@ -39,6 +39,7 @@ class CellInfoMixin(private val isNested: Boolean = false) : MessageMixin() {
         return Single.just(emptyMap())
     }
 
+    @SuppressLint("NewApi")
     @RequiresApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     private fun getCellDetails(c: CellInfo): Map<String, Any> {
         val isAboveP = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P

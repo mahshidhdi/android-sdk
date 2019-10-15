@@ -82,7 +82,9 @@ class NetworkInfoHelper @Inject constructor(
 
     @SuppressLint("MissingPermission")
     fun getWifiNetwork(): WifiDetails? {
-        return if (hasPermission(context, ACCESS_WIFI_STATE)) {
+        val isLocationPermitted = Build.VERSION.SDK_INT < Build.VERSION_CODES.P ||
+                hasPermission(context, ACCESS_COARSE_LOCATION) || hasPermission(context, ACCESS_FINE_LOCATION)
+        return if (hasPermission(context, ACCESS_WIFI_STATE) && isLocationPermitted) {
             wifiManager?.connectionInfo?.let { createWifiDetails(it) }
         } else {
             null

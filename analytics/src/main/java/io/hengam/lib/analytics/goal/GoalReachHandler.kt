@@ -1,105 +1,131 @@
 package io.hengam.lib.analytics.goal
 
+import io.hengam.lib.analytics.AnalyticsException
 import io.hengam.lib.analytics.Constants.ANALYTICS_ERROR_VIEW_GOAL
 import io.hengam.lib.analytics.LogTag.T_ANALYTICS
 import io.hengam.lib.analytics.LogTag.T_ANALYTICS_GOAL
 import io.hengam.lib.analytics.dagger.AnalyticsScope
 import io.hengam.lib.analytics.messages.upstream.GoalReachedMessage
+import io.hengam.lib.analytics.session.SessionIdProvider
+import io.hengam.lib.internal.cpuThread
 import io.hengam.lib.messaging.PostOffice
 import io.hengam.lib.messaging.SendPriority
+import io.hengam.lib.utils.assertCpuThread
 import io.hengam.lib.utils.log.Plog
+import io.reactivex.Completable
+import io.reactivex.Single
 import javax.inject.Inject
 
 @AnalyticsScope
 class ActivityReachHandler @Inject constructor (
-    private val postOffice: PostOffice
+    private val postOffice: PostOffice,
+    private val sessionIdProvider: SessionIdProvider
 ) {
-    fun onGoalReached(goal: ActivityReachGoalData, sessionId: String) {
+    fun onGoalReached(goal: ActivityReachGoalData): Completable {
         Plog.trace(T_ANALYTICS, T_ANALYTICS_GOAL, "Checking whether Activity goal has been reached")
+        return Completable.defer {
+            when {
+                !areViewGoalsReached(goal.viewGoalDataList) -> Completable.complete()
+                !checkFunnels(goal.activityFunnel, Funnel.activityFunnel) -> Completable.complete()
+                else -> Completable.fromCallable {
+                    val viewGoalValues = getViewGoalValues(goal.viewGoalDataList)
+                    val viewGoalsWithError = getViewGoalsWithError(goal.viewGoalDataList)
 
-        if (!areViewGoalsReached(goal.viewGoalDataList)) return
+                    val message =
+                        GoalReachedMessage(
+                            sessionIdProvider.sessionId,
+                            GoalType.ACTIVITY_REACH,
+                            goal.name,
+                            viewGoalValues,
+                            viewGoalsWithError,
+                            Funnel.activityFunnel,
+                            listOf()
+                        )
 
-        if (!checkFunnels(goal.activityFunnel, Funnel.activityFunnel)) return
-
-        val viewGoalValues = getViewGoalValues(goal.viewGoalDataList)
-        val viewGoalsWithError = getViewGoalsWithError(goal.viewGoalDataList)
-
-        val message = GoalReachedMessage(
-            sessionId,
-            GoalType.ACTIVITY_REACH,
-            goal.name,
-            viewGoalValues,
-            viewGoalsWithError,
-            Funnel.activityFunnel,
-            listOf()
-        )
-
-        Plog.info(T_ANALYTICS, T_ANALYTICS_GOAL, "Activity goal has been reached", "Session Id" to sessionId)
-        postOffice.sendMessage(message = message, sendPriority = SendPriority.SOON)
+                    Plog.info(T_ANALYTICS, T_ANALYTICS_GOAL, "Activity goal has been reached",
+                        "Session Id" to sessionIdProvider.sessionId
+                    )
+                    postOffice.sendMessage(message = message, sendPriority = SendPriority.SOON)
+                }
+            }
+        }.subscribeOn(cpuThread())
     }
 }
 
 @AnalyticsScope
 class FragmentReachHandler @Inject constructor (
-    private val postOffice: PostOffice
+    private val postOffice: PostOffice,
+    private val sessionIdProvider: SessionIdProvider
 ) {
-    fun onGoalReached(goal: FragmentReachGoalData, fragmentContainer: FragmentContainer, sessionId: String) {
+    fun onGoalReached(goal: FragmentReachGoalData, fragmentContainerId: String): Completable {
         Plog.trace(T_ANALYTICS, T_ANALYTICS_GOAL, "Checking whether Fragment goal has been reached")
+        return Completable.defer {
+            when {
+                !areViewGoalsReached(goal.viewGoalDataList) -> Completable.complete()
+                Funnel.fragmentFunnel[fragmentContainerId] == null -> Completable.error(
+                    AnalyticsException("Getting fragmentReachGoal fragment's funnel failed. The value is null",
+                        "Key" to fragmentContainerId
+                    )
+                )
+                !checkFunnels(goal.fragmentFunnel, Funnel.fragmentFunnel[fragmentContainerId]) -> Completable.complete()
+                else -> Completable.fromCallable {
+                    val viewGoalValues = getViewGoalValues(goal.viewGoalDataList)
+                    val viewGoalsWithError = getViewGoalsWithError(goal.viewGoalDataList)
 
-        if (!areViewGoalsReached(goal.viewGoalDataList)) return
+                    val message =
+                        GoalReachedMessage (
+                            sessionIdProvider.sessionId,
+                            GoalType.FRAGMENT_REACH,
+                            goal.name,
+                            viewGoalValues,
+                            viewGoalsWithError,
+                            Funnel.activityFunnel,
+                            Funnel.fragmentFunnel[fragmentContainerId]!!
+                    )
 
-        val seenFragmentFunnel = Funnel.fragmentFunnel[fragmentContainer]
+                    Plog.info(T_ANALYTICS, T_ANALYTICS_GOAL, "Fragment goal has been reached",
+                        "Session Id" to sessionIdProvider.sessionId
+                    )
 
-        if (seenFragmentFunnel == null) {
-            Plog.error(T_ANALYTICS, T_ANALYTICS_GOAL, "Getting goal-fragment's funnel failed. The value is null","key" to fragmentContainer)
-            return
-        }
-        if (!checkFunnels(goal.fragmentFunnel, seenFragmentFunnel)) return
-
-        val viewGoalValues = getViewGoalValues(goal.viewGoalDataList)
-        val viewGoalsWithError = getViewGoalsWithError(goal.viewGoalDataList)
-
-        val message = GoalReachedMessage (
-            sessionId,
-            GoalType.FRAGMENT_REACH,
-            goal.name,
-            viewGoalValues,
-            viewGoalsWithError,
-            Funnel.activityFunnel,
-            seenFragmentFunnel
-        )
-
-        Plog.info(T_ANALYTICS, T_ANALYTICS_GOAL, "Fragment goal has been reached", "Session Id" to sessionId)
-
-        postOffice.sendMessage(message = message, sendPriority = SendPriority.SOON)
+                    postOffice.sendMessage(message = message, sendPriority = SendPriority.SOON)
+                }
+            }
+        }.subscribeOn(cpuThread())
     }
 }
 
 @AnalyticsScope
 class ButtonClickHandler @Inject constructor (
-    private val postOffice: PostOffice
+    private val postOffice: PostOffice,
+    private val sessionIdProvider: SessionIdProvider
 ) {
-    fun onGoalReached(goal: ButtonClickGoalData, sessionId: String) {
-
+    fun onGoalReached(goal: ButtonClickGoalData): Completable {
         Plog.trace(T_ANALYTICS, T_ANALYTICS_GOAL, "Checking whether button goal has been reached")
+        return Completable.defer {
+            when {
+                !areViewGoalsReached(goal.viewGoalDataList) -> Completable.complete()
+                else -> Completable.fromCallable {
+                    val viewGoalValues = getViewGoalValues(goal.viewGoalDataList)
+                    val viewGoalsWithError = getViewGoalsWithError(goal.viewGoalDataList)
 
-        if (!areViewGoalsReached(goal.viewGoalDataList)) return
+                    val message =
+                        GoalReachedMessage(
+                            sessionIdProvider.sessionId,
+                            GoalType.BUTTON_CLICK,
+                            goal.name,
+                            viewGoalValues,
+                            viewGoalsWithError,
+                            listOf(),
+                            listOf()
+                    )
 
-        val viewGoalValues = getViewGoalValues(goal.viewGoalDataList)
-        val viewGoalsWithError = getViewGoalsWithError(goal.viewGoalDataList)
-
-        val message = GoalReachedMessage(
-            sessionId,
-            GoalType.BUTTON_CLICK,
-            goal.name,
-            viewGoalValues,
-            viewGoalsWithError,
-            listOf(),
-            listOf()
-        )
-
-        Plog.info(T_ANALYTICS, T_ANALYTICS_GOAL, "Button goal has been reached","Session Id" to sessionId)
-        postOffice.sendMessage(message = message, sendPriority = SendPriority.SOON)
+                    Plog.info(T_ANALYTICS, T_ANALYTICS_GOAL, "Button goal has been reached",
+                        "Session Id" to sessionIdProvider.sessionId
+                    )
+                    postOffice.sendMessage(message = message, sendPriority = SendPriority.SOON)
+                }
+            }
+        }.subscribeOn(cpuThread())
     }
 }
 
@@ -137,7 +163,9 @@ private fun areViewGoalsReached(viewGoalDataList: List<ViewGoalData>): Boolean {
  *
  * @return true if the target funnel matches the end of seen funnel and false otherwise
  */
-private fun checkFunnels(goalFunnel: List<String>, seenFunnel: MutableList<String>): Boolean {
+private fun checkFunnels(goalFunnel: List<String>, seenFunnel: MutableList<String>?): Boolean {
+    if (seenFunnel.isNullOrEmpty()) return false
+
     var seenScreens = seenFunnel.dropLast(1)
 
     for (screenName in goalFunnel.reversed()) {

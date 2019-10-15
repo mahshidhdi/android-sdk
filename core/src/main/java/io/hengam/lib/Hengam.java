@@ -5,10 +5,13 @@ import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-
 import com.google.firebase.messaging.RemoteMessage;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -97,7 +100,7 @@ public class Hengam {
                     public void run() throws Exception {
                         TopicManager topicManager = core.topicManager();
 
-                        Disposable innerDisposable = topicManager.subscribe(topic)
+                        Disposable innerDisposable = topicManager.subscribe(topic, true)
                                 .subscribe(new Action() {
                                     public void run() {
                                         runOnUiThread(callback);
@@ -111,16 +114,20 @@ public class Hengam {
         subscribeToTopic(topic, null);
     }
 
-    public static void addTags(final List<String> tags) {
+    public static void addTags(final Map<String, String> tags) {
         final CoreComponent core = getCoreComponentOrFail("Setting the tag failed");
         if (core == null) return;
 
+        int sizeOfSubscribedTags = core.tagManager().getSubscribedTags().size();
+        if (tags.size() + sizeOfSubscribedTags > 10) {
+            Log.w("Hengam", "You can't subscribe a user to more that 10 tags.");
+            return;
+        }
         Disposable disposable = core.hengamLifecycle().waitForPostInit()
                 .subscribe(new Action() {
                     @Override
                     public void run() throws Exception {
                         TagManager tagManager = core.tagManager();
-
                         Disposable innerDisposable = tagManager.addTags(tags).subscribe();
                     }
                 });
@@ -135,10 +142,23 @@ public class Hengam {
                     @Override
                     public void run() throws Exception {
                         TagManager tagManager = core.tagManager();
-
                         Disposable innerDisposable = tagManager.removeTags(tags).subscribe();
                     }
                 });
+    }
+
+    /**
+     * @return all tags that user has subscribed,
+     *      Null, if anything went wrong.
+     */
+    public static Map<String, String> getSubscribedTags() {
+        final CoreComponent core = getCoreComponentOrFail("Setting the tag failed");
+        if (core == null) return null;
+        try {
+            return core.tagManager().getSubscribedTags();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
@@ -159,7 +179,7 @@ public class Hengam {
                     public void run() throws Exception {
                         TopicManager topicManager = core.topicManager();
 
-                        Disposable innerDisposable = topicManager.unsubscribe(topic)
+                        Disposable innerDisposable = topicManager.unsubscribe(topic, true)
                                 .subscribe(new Action() {
                                     public void run() {
                                         runOnUiThread(callback);
@@ -171,6 +191,24 @@ public class Hengam {
 
     public static void unsubscribeFromTopic(final String topic) {
         unsubscribeFromTopic(topic, null);
+    }
+
+    /**
+     * Get all the topics you have subscribed.
+     * @return a list of string having all subscribed topics.
+     */
+    public static List<String> getSubscribedTopics() {
+        CoreComponent core = getCoreComponentOrFail(null);
+        if (core == null) return new ArrayList<>();
+        Iterator<String> actual = core.topicManager().getSubscribedTopics().iterator();
+        List<String> list = new ArrayList<>();
+        while (actual.hasNext()) {
+            String s = actual.next();
+            if (s.endsWith("_" + core.appManifest().appId)) {
+                list.add(s.replace("_" + core.appManifest().appId, ""));
+            }
+        }
+        return list;
     }
 
     /**

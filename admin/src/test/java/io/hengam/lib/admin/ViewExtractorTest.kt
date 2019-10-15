@@ -2,6 +2,8 @@ package io.hengam.lib.admin
 
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.AppCompatEditText
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import io.hengam.lib.admin.analytics.activities.DuplicateFragmentActivity
@@ -66,17 +68,21 @@ class ViewExtractorTest {
     fun extractViews_ignoresViewGoalDataWithDifferentActivity() {
         initializeDuplicateFragmentActivity()
 
-        var extractedView = ViewExtractor.extractView(viewGoal_simpleActivity_noFragment, duplicateFragmentActivity)
-        assertEquals(null, extractedView)
+        ViewExtractor.extractView(viewGoal_simpleActivity_noFragment, duplicateFragmentActivity)
+            .test()
+            .assertValue { it.javaClass == View::class.java }
 
-        extractedView = ViewExtractor.extractView(viewGoal_simpleActivity_noFragment, outerFragment)
-        assertEquals(null, extractedView)
+        ViewExtractor.extractView(viewGoal_simpleActivity_noFragment, outerFragment)
+            .test()
+            .assertValue { it.javaClass == View::class.java }
 
-        extractedView = ViewExtractor.extractView(viewGoal_simpleActivity_withFragment, outerFragment)
-        assertEquals(null, extractedView)
+        ViewExtractor.extractView(viewGoal_simpleActivity_withFragment, outerFragment)
+            .test()
+            .assertValue { it.javaClass == View::class.java }
 
-        extractedView = ViewExtractor.extractView(viewGoal_simpleActivity_withFragment, duplicateFragmentActivity)
-        assertEquals(null, extractedView)
+        ViewExtractor.extractView(viewGoal_simpleActivity_withFragment, duplicateFragmentActivity)
+            .test()
+            .assertValue { it.javaClass == View::class.java }
     }
 
     @Test
@@ -85,27 +91,31 @@ class ViewExtractorTest {
 
         // viewGoalData without fragment, calling with activity
         viewGoalData_duplicateFragmentActivity_noFragment_wrongId.currentValue = null
-        var extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_noFragment_wrongId, duplicateFragmentActivity)
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_noFragment_wrongId, duplicateFragmentActivity)
+            .test()
+            .assertValue { it.javaClass == View::class.java }
         assertEquals(Constants.ANALYTICS_ERROR_VIEW_GOAL, viewGoalData_duplicateFragmentActivity_noFragment_wrongId.currentValue)
-        assertNull(extractedView)
 
         // viewGoalData with fragment, calling with activity
         viewGoalData_duplicateFragmentActivity_withFragment_wrongId.currentValue = null
-        extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment_wrongId, duplicateFragmentActivity)
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment_wrongId, duplicateFragmentActivity)
+            .test()
+            .assertValue { it.javaClass == View::class.java }
         assertEquals(Constants.ANALYTICS_ERROR_VIEW_GOAL, viewGoalData_duplicateFragmentActivity_withFragment_wrongId.currentValue)
-        assertNull(extractedView)
 
         // viewGoalData without fragment, calling with outer fragment
         viewGoalData_duplicateFragmentActivity_noFragment_wrongId.currentValue = null
-        extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_noFragment_wrongId, outerFragment)
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_noFragment_wrongId, outerFragment)
+            .test()
+            .assertValue { it.javaClass == View::class.java }
         assertEquals(Constants.ANALYTICS_ERROR_VIEW_GOAL, viewGoalData_duplicateFragmentActivity_noFragment_wrongId.currentValue)
-        assertNull(extractedView)
 
         // viewGoalData with fragment, calling with outer fragment
         viewGoalData_duplicateFragmentActivity_withFragment_wrongId.currentValue = null
-        extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment_wrongId, outerFragment)
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment_wrongId, outerFragment)
+            .test()
+            .assertValue { it.javaClass == View::class.java }
         assertEquals(Constants.ANALYTICS_ERROR_VIEW_GOAL, viewGoalData_duplicateFragmentActivity_withFragment_wrongId.currentValue)
-        assertNull(extractedView)
     }
 
     @Test
@@ -114,15 +124,23 @@ class ViewExtractorTest {
 
         // viewGoalData without fragment, calling with activity
         viewGoalData_duplicateFragmentActivity_noFragment.currentValue = null
-        var extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_noFragment, duplicateFragmentActivity)
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_noFragment, duplicateFragmentActivity)
+            .test()
+            .assertValue {
+                TextView::class.java.isAssignableFrom(it.javaClass) &&
+                        "this is in activity" == (it as TextView).text.toString()
+            }
         assertNull(viewGoalData_duplicateFragmentActivity_noFragment.currentValue)
-        assertEquals("this is in activity", (extractedView as TextView).text)
 
         // viewGoalData without fragment, calling with outerFragment
         viewGoalData_duplicateFragmentActivity_noFragment.currentValue = null
-        extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_noFragment, outerFragment)
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_noFragment, outerFragment)
+            .test()
+            .assertValue {
+                TextView::class.java.isAssignableFrom(it.javaClass) &&
+                        "this is in activity" == (it as TextView).text.toString()
+            }
         assertNull(viewGoalData_duplicateFragmentActivity_noFragment.currentValue)
-        assertEquals("this is in activity", (extractedView as TextView).text)
     }
 
     @Test
@@ -131,14 +149,16 @@ class ViewExtractorTest {
 
         // viewGoalData with wrong fragment id, calling with activity
         viewGoalData_duplicateFragmentActivity_withFragment_wrongFragmentId.currentValue = null
-        var extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment_wrongFragmentId, duplicateFragmentActivity)
-        assertNull(extractedView)
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment_wrongFragmentId, duplicateFragmentActivity)
+            .test()
+            .assertValue { it.javaClass == View::class.java }
         assertEquals(Constants.ANALYTICS_ERROR_VIEW_GOAL, viewGoalData_duplicateFragmentActivity_withFragment_wrongFragmentId.currentValue)
 
         // viewGoalData with wrong fragment id, calling with outer fragment
         viewGoalData_duplicateFragmentActivity_withFragment_wrongFragmentId.currentValue = null
-        extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment_wrongFragmentId, outerFragment)
-        assertNull(extractedView)
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment_wrongFragmentId, outerFragment)
+            .test()
+            .assertValue { it.javaClass == View::class.java }
         assertEquals(Constants.ANALYTICS_ERROR_VIEW_GOAL, viewGoalData_duplicateFragmentActivity_withFragment_wrongFragmentId.currentValue)
     }
 
@@ -148,14 +168,16 @@ class ViewExtractorTest {
 
         // viewGoalData with fragment, calling with activity
         viewGoalData_nestedFragmentsActivity_withFragment.currentValue = null
-        var extractedView = ViewExtractor.extractView(viewGoalData_nestedFragmentsActivity_withFragment, nestedFragmentsActivity)
-        assertNull(extractedView)
+        ViewExtractor.extractView(viewGoalData_nestedFragmentsActivity_withFragment, nestedFragmentsActivity)
+            .test()
+            .assertValue { it.javaClass == View::class.java }
         assertNull(viewGoalData_nestedFragmentsActivity_withFragment.currentValue)
 
         // viewGoalData with fragment, calling with different fragment in same activity
         viewGoalData_nestedFragmentsActivity_withFragment.currentValue = null
-        extractedView = ViewExtractor.extractView(viewGoalData_nestedFragmentsActivity_withFragment, parentFragment)
-        assertNull(extractedView)
+        ViewExtractor.extractView(viewGoalData_nestedFragmentsActivity_withFragment, parentFragment)
+            .test()
+            .assertValue { it.javaClass == View::class.java }
         assertNull(viewGoalData_nestedFragmentsActivity_withFragment.currentValue)
     }
 
@@ -166,14 +188,22 @@ class ViewExtractorTest {
 
         // viewGoalData with fragment, calling with activity
         viewGoalData_duplicateFragmentActivity_withFragment.currentValue = null
-        var extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment, duplicateFragmentActivity)
-        assertEquals("this is in outer fragment", (extractedView as TextView).text.toString())
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment, duplicateFragmentActivity)
+            .test()
+            .assertValue {
+                TextView::class.java.isAssignableFrom(it.javaClass) &&
+                        "this is in outer fragment" == (it as TextView).text.toString()
+            }
         assertNull(viewGoalData_duplicateFragmentActivity_withFragment.currentValue)
 
         // viewGoalData with fragment, calling with different fragment in same activity
         viewGoalData_duplicateFragmentActivity_withFragment.currentValue = null
-        extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment, parentFragment)
-        assertEquals("this is in outer fragment", (extractedView as TextView).text.toString())
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment, parentFragment)
+            .test()
+            .assertValue {
+                TextView::class.java.isAssignableFrom(it.javaClass) &&
+                        "this is in outer fragment" == (it as TextView).text.toString()
+            }
         assertNull(viewGoalData_duplicateFragmentActivity_withFragment.currentValue)
 
 
@@ -189,14 +219,22 @@ class ViewExtractorTest {
 
         // viewGoalData with fragment, calling with activity
         viewGoalData_nestedFragmentsActivity_withFragment.currentValue = null
-        extractedView = ViewExtractor.extractView(viewGoalData_nestedFragmentsActivity_withFragment, nestedFragmentsActivity)
-        assertEquals("this is in inner fragment", (extractedView as TextView).text.toString())
+        ViewExtractor.extractView(viewGoalData_nestedFragmentsActivity_withFragment, nestedFragmentsActivity)
+            .test()
+            .assertValue {
+                TextView::class.java.isAssignableFrom(it.javaClass) &&
+                        "this is in inner fragment" == (it as TextView).text.toString()
+            }
         assertNull(viewGoalData_nestedFragmentsActivity_withFragment.currentValue)
 
         // viewGoalData with fragment, calling with different fragment in same activity
         viewGoalData_nestedFragmentsActivity_withFragment.currentValue = null
-        extractedView = ViewExtractor.extractView(viewGoalData_nestedFragmentsActivity_withFragment, parentFragment)
-        assertEquals("this is in inner fragment", (extractedView as TextView).text.toString())
+        ViewExtractor.extractView(viewGoalData_nestedFragmentsActivity_withFragment, parentFragment)
+            .test()
+            .assertValue {
+                TextView::class.java.isAssignableFrom(it.javaClass) &&
+                        "this is in inner fragment" == (it as TextView).text.toString()
+            }
         assertNull(viewGoalData_nestedFragmentsActivity_withFragment.currentValue)
     }
 
@@ -206,21 +244,32 @@ class ViewExtractorTest {
 
         // viewGoalData with fragment, calling with activity
         viewGoalData_duplicateFragmentActivity_withFragment.currentValue = null
-        var extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment, duplicateFragmentActivity)
-        assertNotNull(extractedView)
-        assertEquals("this is in outer fragment", (extractedView as TextView).text.toString())
-
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment, duplicateFragmentActivity)
+            .test()
+            .assertValue {
+                TextView::class.java.isAssignableFrom(it.javaClass) &&
+                        "this is in outer fragment" == (it as TextView).text.toString()
+            }
         assertNull(viewGoalData_duplicateFragmentActivity_withFragment.currentValue)
+
         // viewGoalData with fragment, calling with inner fragment
         viewGoalData_duplicateFragmentActivity_withFragment.currentValue = null
-        extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment, innerFragment)
-        assertEquals("this is in inner fragment", (extractedView as TextView).text.toString())
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment, innerFragment)
+            .test()
+            .assertValue {
+                TextView::class.java.isAssignableFrom(it.javaClass) &&
+                        "this is in inner fragment" == (it as TextView).text.toString()
+            }
         assertNull(viewGoalData_duplicateFragmentActivity_withFragment.currentValue)
 
         // viewGoalData with fragment, calling with outer fragment
         viewGoalData_duplicateFragmentActivity_withFragment.currentValue = null
-        extractedView = ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment, outerFragment)
-        assertEquals("this is in outer fragment", (extractedView as TextView).text.toString())
+        ViewExtractor.extractView(viewGoalData_duplicateFragmentActivity_withFragment, outerFragment)
+            .test()
+            .assertValue {
+                TextView::class.java.isAssignableFrom(it.javaClass) &&
+                        "this is in outer fragment" == (it as TextView).text.toString()
+            }
         assertNull(viewGoalData_duplicateFragmentActivity_withFragment.currentValue)
     }
 }

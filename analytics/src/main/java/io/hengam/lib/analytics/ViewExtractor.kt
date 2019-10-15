@@ -8,6 +8,7 @@ import io.hengam.lib.analytics.LogTag.T_ANALYTICS
 import io.hengam.lib.analytics.LogTag.T_ANALYTICS_GOAL
 import io.hengam.lib.analytics.goal.ViewGoalData
 import io.hengam.lib.utils.log.Plog
+import io.reactivex.Single
 
 // TODO: needs better docs
 /**
@@ -15,42 +16,51 @@ import io.hengam.lib.utils.log.Plog
  */
 object ViewExtractor {
 
-    fun extractView(viewGoalData: ViewGoalData, activity: Activity): View? {
-        var view: View? = null
-        if (viewGoalData.activityClassName == activity.javaClass.simpleName) {
-            view = if (viewGoalData.goalFragmentInfo != null) {
-                getFragmentView(viewGoalData, activity)
-            } else {
-                getActivityView(viewGoalData, activity)
+    fun extractView(viewGoalData: ViewGoalData, activity: Activity): Single<View> {
+        return when {
+            viewGoalData.activityClassName == activity.javaClass.simpleName -> {
+                if (viewGoalData.goalFragmentInfo != null) {
+                    getFragmentView(viewGoalData, activity)
+                } else {
+                    getActivityView(viewGoalData, activity)
+                }
             }
+            else -> Single.just(View(activity))
         }
-        return view
     }
 
     /**
      * If the viewGoalData has a fragmentInfo that matches the possible fragment, the view is extracted from
      * the fragment. If not, the view is extracted from the fragment's activity
      */
-    fun extractView(viewGoalData: ViewGoalData, possibleFragment: Fragment): View? {
-        var view: View? = null
-        if (viewGoalData.activityClassName == possibleFragment.activity?.javaClass?.simpleName) {
-            view = if (viewGoalData.goalFragmentInfo != null) {
-                val possibleFragmentName = possibleFragment.javaClass.canonicalName
-                if (possibleFragmentName != null &&
-                    (viewGoalData.goalFragmentInfo.actualName == possibleFragmentName ||
-                            viewGoalData.goalFragmentInfo.obfuscatedName == possibleFragmentName) &&
-                    viewGoalData.goalFragmentInfo.fragmentId ==
+    fun extractView(viewGoalData: ViewGoalData, possibleFragment: Fragment): Single<View> {
+        return when {
+            viewGoalData.activityClassName == possibleFragment.activity?.javaClass?.simpleName -> {
+                when {
+                    viewGoalData.goalFragmentInfo != null -> {
+                        val possibleFragmentName = possibleFragment.javaClass.canonicalName
+                        if (possibleFragmentName != null &&
+                            (viewGoalData.goalFragmentInfo.actualName == possibleFragmentName ||
+                                    viewGoalData.goalFragmentInfo.obfuscatedName == possibleFragmentName) &&
+                            viewGoalData.goalFragmentInfo.fragmentId ==
                             possibleFragment.activity?.resources?.getResourceEntryName(possibleFragment.id)
-                ) {
-                    getFragmentView(viewGoalData, possibleFragment)
-                } else {
-                    getFragmentView(viewGoalData, possibleFragment.activity)
+                        ) {
+                            getFragmentView(viewGoalData, possibleFragment)
+                        } else {
+                            if (possibleFragment.activity != null) {
+                                getFragmentView(viewGoalData, possibleFragment.activity!!)
+                            } else Single.just(View(possibleFragment.context))
+                        }
+                    }
+                    else -> {
+                        if (possibleFragment.activity != null) {
+                            getActivityView(viewGoalData, possibleFragment.activity!!)
+                        } else Single.just(View(possibleFragment.context))
+                    }
                 }
-            } else {
-                getActivityView(viewGoalData, possibleFragment.activity)
             }
+            else -> Single.just(View(possibleFragment.context))
         }
-        return view
     }
 
     /**
@@ -58,20 +68,18 @@ object ViewExtractor {
      *
      * errors if the view is not found
      */
-    private fun getActivityView(viewGoalData: ViewGoalData, activity: Activity?): View? {
-        if (activity == null){
-            return null
-        }
+    private fun getActivityView(viewGoalData: ViewGoalData, activity: Activity): Single<View> {
         val view = activity.findViewById<View> (
             activity.resources.getIdentifier(viewGoalData.viewID, "id", activity.packageName))
         if (view == null) {
-            Plog.error(T_ANALYTICS, T_ANALYTICS_GOAL, "Unable to extract view in activity, the id is possibly wrong. The viewGoal will be ignored.",
+            Plog.error(T_ANALYTICS, "Unable to extract view in activity, the id is possibly wrong. The viewGoal will be ignored.",
                 "id" to viewGoalData.viewID,
                 "activity" to viewGoalData.activityClassName
             )
             viewGoalData.currentValue = Constants.ANALYTICS_ERROR_VIEW_GOAL
+            return Single.just(View(activity))
         }
-        return view
+        return Single.just(view)
     }
 
     /**
@@ -79,28 +87,29 @@ object ViewExtractor {
      *
      * errors if the fragmentView is null or the view is not found
      */
-    private fun getFragmentView(viewGoalData: ViewGoalData, fragment: Fragment): View? {
+    private fun getFragmentView(viewGoalData: ViewGoalData, fragment: Fragment): Single<View> {
         val fragmentView = fragment.view
         if (fragmentView == null){
-            Plog.error(T_ANALYTICS, T_ANALYTICS_GOAL, "Unable to extract view in fragment, the fragmentView has not been created. " +
+            Plog.error(T_ANALYTICS, "Unable to extract view in fragment, the fragmentView has not been created. " +
                     "The viewGoal will be ignored.",
                 "id" to viewGoalData.viewID,
                 "activity" to viewGoalData.activityClassName,
                 "fragmentInfo" to viewGoalData.goalFragmentInfo
             )
-            return null
+            return Single.just(View(fragment.context))
         }
         val view = fragmentView.findViewById<View> (
             fragment.resources.getIdentifier(viewGoalData.viewID, "id", fragment.activity?.packageName))
         if (view == null) {
-            Plog.error(T_ANALYTICS, T_ANALYTICS_GOAL, "Unable to extract view in fragment, the id is possibly wrong. The viewGoal will be ignored.",
+            Plog.error(T_ANALYTICS, "Unable to extract view in fragment, the id is possibly wrong. The viewGoal will be ignored.",
                 "id" to viewGoalData.viewID,
                 "activity" to viewGoalData.activityClassName,
                 "fragmentInfo" to viewGoalData.goalFragmentInfo
             )
             viewGoalData.currentValue = Constants.ANALYTICS_ERROR_VIEW_GOAL
+            return Single.just(View(fragment.context))
         }
-        return view
+        return Single.just(view)
     }
 
     /**
@@ -110,18 +119,15 @@ object ViewExtractor {
      * viewGoalData's fragment extracts the view from the fragment, if not returns null
      *
      */
-    private fun getFragmentView(viewGoalData: ViewGoalData, activity: Activity?): View? {
-        if (activity == null || viewGoalData.goalFragmentInfo == null){
-            return null
-        }
-        val currentFragment = getCurrentFragment(viewGoalData.goalFragmentInfo, activity)
+    private fun getFragmentView(viewGoalData: ViewGoalData, activity: Activity): Single<View> {
+        val currentFragment = getCurrentFragment(viewGoalData.goalFragmentInfo!!, activity)
         if (currentFragment == null) {
             viewGoalData.currentValue = Constants.ANALYTICS_ERROR_VIEW_GOAL
-            Plog.error(T_ANALYTICS, T_ANALYTICS_GOAL, "null value trying to get a viewGoal's fragment. The id is possibly wrong",
+            Plog.error(T_ANALYTICS, "null value trying to get a viewGoal's fragment. The id is possibly wrong",
                 "Activity Name" to activity.javaClass.simpleName,
                 "Fragment Id" to viewGoalData.goalFragmentInfo.fragmentId
             )
-            return null
+            return Single.just(View(activity))
         }
         val currentFragmentName = currentFragment.javaClass.canonicalName
         if (currentFragmentName != null &&
@@ -129,7 +135,7 @@ object ViewExtractor {
                     viewGoalData.goalFragmentInfo.obfuscatedName == currentFragmentName)){
             return getFragmentView(viewGoalData, currentFragment)
         }
-        return null
+        return Single.just(View(activity))
     }
 
     /**

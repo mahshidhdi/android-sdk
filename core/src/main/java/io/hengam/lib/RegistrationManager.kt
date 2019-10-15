@@ -1,6 +1,7 @@
 package io.hengam.lib
 
 import android.content.Context
+import io.hengam.lib.Constants.BROADCAST_TOPIC
 import io.hengam.lib.LogTag.T_FCM
 import io.hengam.lib.LogTag.T_REGISTER
 import io.hengam.lib.internal.cpuThread
@@ -81,7 +82,7 @@ class RegistrationManager @Inject constructor(
                     if (ApplicationInfoHelper(context).isAppHidden()) {
                         Plog.warn(T_REGISTER, "App is hidden, will not subscribe to broadcast topic")
                     } else {
-                        topicManager.subscribeToBroadcast()
+                        topicManager.subscribe(BROADCAST_TOPIC)
                     }
                 }
 

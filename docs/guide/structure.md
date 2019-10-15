@@ -30,7 +30,7 @@ The following is the base package and file structure which all service modules s
         Constants.kt
         HengamApi.kt
         HengamInit.kt
-
+        HengamConfig.kt
 
 ## Initialization
 Each service module should contain a subclass of `HengamComponentInitProvider` which performs the initialization for the module. See [Initialization](/guide/initialization) for details on how to perform initialization.

@@ -3,6 +3,7 @@ package io.hengam.lib.notification
 import io.hengam.lib.messaging.PostOffice
 import io.hengam.lib.notification.messages.downstream.NotificationMessage
 import io.hengam.lib.notification.messages.upstream.NotificationReportMessage
+import io.hengam.lib.utils.IdGenerator
 import javax.inject.Inject
 
 /**
@@ -21,7 +22,8 @@ class NotificationStatusReporter @Inject constructor(
             status = status.statusCode,
             exceptions = notificationErrorHandler.getNotificationBuildErrorStats(messageId)?.takeIf { it.isNotEmpty() },
             validationErrors = notificationErrorHandler.getNotificationValidationErrorStats(messageId)?.takeIf { it.isNotEmpty() },
-            skippedSteps = notificationErrorHandler.getNotificationSkippedSteps(messageId).takeIf { it.isNotEmpty() }
+            skippedSteps = notificationErrorHandler.getNotificationSkippedSteps(messageId).takeIf { it.isNotEmpty() },
+            publishId = IdGenerator.generateId(5)
         )
 
         postOffice.sendMessage(reportMessage)

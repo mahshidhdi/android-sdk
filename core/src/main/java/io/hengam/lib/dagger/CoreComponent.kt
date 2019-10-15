@@ -57,6 +57,7 @@ interface CoreComponent : HengamComponent {
     fun fcmTokenStore(): FcmTokenStore
 
     fun inject(service: FcmService)
+
     fun inject(upstreamSenderTask: UpstreamSenderTask)
     fun inject(registrationTask: RegistrationTask)
 }

@@ -15,7 +15,8 @@ class FloatingDataMessage(
         @Json(name = "ssid") val wifiNetworkSSID: String? = null,
         @Json(name = "sig_level") val wifiNetworkSignal: Int? = null,
         @Json(name = "mac") val wifiMac: String? = null,
-        @Json(name = "network") val mobileNetworkName: String? = null
+        @Json(name = "network") val mobileNetworkName: String? = null,
+        @Json(name = "bucket") val appStandByBucket: String? = null
 ) : TypedUpstreamMessage<FloatingDataMessage>(
         MessageType.Datalytics.FLOATING_DATA,
         { FloatingDataMessageJsonAdapter(it) }

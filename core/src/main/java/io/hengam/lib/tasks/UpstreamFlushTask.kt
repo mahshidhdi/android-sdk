@@ -1,9 +1,7 @@
 package io.hengam.lib.tasks
 
 import android.content.Context
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.WorkerParameters
+import androidx.work.*
 import io.hengam.lib.LogTag.T_MESSAGE
 import io.hengam.lib.Hengam
 import io.hengam.lib.internal.HengamInternals
@@ -28,23 +26,22 @@ import kotlin.reflect.KClass
  * messages at a time instead of having two separate tasks iterating through the upstream messages
  * and handling back-offs, etc.
  */
-class UpstreamFlushTask(context: Context, workerParameters: WorkerParameters)
-    : HengamTask("upstream_flush", context, workerParameters) {
+class UpstreamFlushTask: HengamTask() {
 
-    override fun perform(): Single<Result> {
+    override fun perform(inputData: Data): Single<ListenableWorker.Result> {
         val core = HengamInternals.getComponent(CoreComponent::class.java)
             ?: throw ComponentNotAvailableException(Hengam.CORE)
 
         Plog.debug(T_MESSAGE, "Flushing upstream messages")
         core.taskScheduler().scheduleTask(UpstreamSenderTask.Options)
-        return Single.just(Result.success())
+        return Single.just(ListenableWorker.Result.success())
     }
 
     class Options : PeriodicTaskOptions() {
         override fun networkType(): NetworkType = NetworkType.CONNECTED
         override fun task(): KClass<out HengamTask> = UpstreamFlushTask::class
         override fun repeatInterval(): Time = hengamConfig.upstreamFlushInterval
-        override fun taskId(): String? = "hengam_upstream_flush"
+        override fun taskId(): String = "hengam_upstream_flush"
         override fun existingWorkPolicy(): ExistingPeriodicWorkPolicy? = ExistingPeriodicWorkPolicy.KEEP
         override fun backoffDelay(): Time? = seconds(30)
         override fun flexibilityTime() = hours(2)

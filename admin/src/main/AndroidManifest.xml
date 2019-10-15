@@ -40,7 +40,6 @@
             android:name="io.hengam.lib.admin.MainActivity"
             android:label="@string/app_name"
             android:launchMode="singleInstance"
-            android:taskAffinity="io.hengam.adminapp.AffinityLog"
             android:theme="@style/AppTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -52,37 +51,29 @@
             </intent-filter>
         </activity>
         <activity
-            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
             android:name="io.hengam.lib.admin.analytics.activities.MultipleFrameLayoutActivity"
             android:theme="@style/AnalyticsTheme"/>
         <activity
             android:name="io.hengam.lib.admin.analytics.activities.SimpleActivity"
-            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
             android:theme="@style/AnalyticsTheme" />
         <activity
-            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
             android:name="io.hengam.lib.admin.analytics.activities.SimpleActivity2"
             android:theme="@style/AnalyticsTheme"/>
         <activity
-            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
             android:name="io.hengam.lib.admin.analytics.activities.FragmentActivity"
             android:theme="@style/AnalyticsTheme"/>
         <activity
-            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
             android:name="io.hengam.lib.admin.analytics.activities.DuplicateFragmentActivity"
             android:theme="@style/AnalyticsTheme"/>
         <activity
-            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
             android:name="io.hengam.lib.admin.analytics.activities.NestedFragmentsActivity"
             android:theme="@style/AnalyticsTheme" />
         <activity
-            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
             android:name="io.hengam.lib.admin.analytics.activities.ListViewActivity"
             android:windowSoftInputMode="stateHidden"
             android:theme="@style/AnalyticsTheme" />
         <activity
             android:name="io.hengam.lib.admin.analytics.activities.ViewPagerActivity"
-            android:taskAffinity="io.hengam.adminapp.AffinityAnalyticsTest"
             android:theme="@style/AnalyticsTheme" />
 
         <activity android:name="io.hengam.lib.admin.ChangelogActivity" />
@@ -93,7 +84,12 @@
         
         <meta-data
             android:name="hengam_token"
-            android:value="io.hengam.adminapp@292417903871" />
+            android:value="Y28ucHVzaGUuYWRtaW5hcHBAcnZyQDEwMDcwNDQ5MDU3NTA=" />
+        <!-- io.hengam.adminapp@rvr@1007044905750 -->
+        
+        <meta-data
+            android:name="hengam_log_level"
+            android:value="debug" />
 
         <meta-data
             android:name="hengam_log_collection_url"

@@ -1,12 +1,13 @@
 package io.hengam.lib
 
-import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
 import io.hengam.lib.dagger.CoreScope
 import io.hengam.lib.internal.HengamException
+import io.hengam.lib.utils.ApplicationInfoHelper
 import io.hengam.lib.utils.log.LogLevel
+import java.lang.StringBuilder
 import javax.inject.Inject
 
 /**
@@ -19,40 +20,50 @@ import javax.inject.Inject
  */
 @CoreScope
 class AppManifest @Inject constructor(
-        private val context: Context
+        private val applicationInfoHelper: ApplicationInfoHelper
 ) {
     lateinit var appId: String
     var fcmSenderId: String? = null
+    var validator: String? = null
     var disableAdvertisementId: Boolean = false
 
     var logLevel: LogLevel? = null
     var logDataEnabled: Boolean? = null
     var logTagsEnabled: Boolean? = null
 
+
+
     fun extractManifestData() {
-        val ai = context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
-        val bundle = ai.metaData
-
-        val hengamToken = bundle.getString(MANIFEST_KEY_HENGAM_TOKEN, null)
-
-        if (hengamToken == null) {
+        val bundle = applicationInfoHelper.getManifestMetaData()
+        val encodedToken = bundle?.getString(MANIFEST_KEY_HENGAM_TOKEN, null)
+        if (encodedToken == null) {
             Log.w("Hengam", "Unable to find hengam_token in application manifest")
             throw HengamManifestException("Unable to find hengam_token in application manifest")
-        } else if (hengamToken.isNullOrBlank()) {
+        } else if (encodedToken.isBlank()) {
+            Log.w("Hengam", "Invalid hengam_token provided in application manifest")
+            throw HengamManifestException("Invalid hengam_token provided in application manifest")
+        }
+        val hengamToken = String(Base64.decode(encodedToken, Base64.NO_WRAP))
+
+        if (hengamToken.isBlank()) {
             Log.w("Hengam", "Invalid hengam_token provided in application manifest")
             throw HengamManifestException("Invalid hengam_token provided in application manifest")
         }
 
         val parts = hengamToken.split("#", "-", "@")
-
-        if (parts.size < 2 ||
+        println(parts)
+        if (parts.size < 3 ||
                 !parts[0].matches("^[a-zA-Z0-9.]+$".toRegex()) ||
-                !parts[1].matches("^[0-9]+$".toRegex())) {
+                !parts[1].matches("^[a-z][a-z][a-z]$".toRegex()) ||
+                !parts[2].matches("^[0-9]+$".toRegex())) {
             throw HengamManifestException("Invalid hengam_token provided in application manifest")
         }
 
         appId = parts[0]
-        fcmSenderId = parts[1]
+        validator = parts[1]
+        fcmSenderId = parts[2]
+
+        validateHengamPlusAppId()
 
         disableAdvertisementId = readBooleanValue(bundle, MANIFEST_KEY_DISABLE_ADVERTISEMENT_ID) ?: false
 
@@ -92,6 +103,31 @@ class AppManifest @Inject constructor(
         }
     }
 
+    private fun validateHengamPlusAppId() {
+
+        val validationCharCount: Int = (appId.length) / APP_ID_VALIDATORS_COUNT
+        val appIdValidator = StringBuilder("")
+
+        var chunkValidator: Int
+        for (validationIndex in 0 until APP_ID_VALIDATORS_COUNT) {
+            chunkValidator = 0
+            val firstIndex = validationIndex * validationCharCount
+            val lastIndex =
+                if (validationIndex == APP_ID_VALIDATORS_COUNT - 1) appId.length
+                else ((validationIndex + 1) * validationCharCount)
+
+            appId.subSequence(firstIndex, lastIndex).forEach { char ->
+                chunkValidator += char.toByte()
+            }
+
+            appIdValidator.append(((chunkValidator % ALPHABET_COUNT) + FIRST_LETTER_CODE).toChar())
+        }
+
+        if (appIdValidator.toString() != validator) {
+            throw HengamManifestException("Provided token in the application manifest does not contain a valid appId")
+        }
+    }
+
     companion object {
         const val MANIFEST_KEY_HENGAM_TOKEN = "hengam_token"
         const val MANIFEST_KEY_DISABLE_ADVERTISEMENT_ID = "hengam_disable_advertisement_id"
@@ -99,6 +135,9 @@ class AppManifest @Inject constructor(
         const val MANIFEST_KEY_LOG_DATA_ENABLED = "hengam_log_data_enabled"
         const val MANIFEST_KEY_LOG_TAGS_ENABLED = "hengam_log_tags_enabled"
 
+        const val APP_ID_VALIDATORS_COUNT = 3
+        const val ALPHABET_COUNT = 26
+        const val FIRST_LETTER_CODE = 97
     }
 }
 

@@ -46,6 +46,7 @@
 }
 
 -keep public class io.reactivex.Completable {
+    public static io.reactivex.Completable defer(java.util.concurrent.Callable);
     public static io.reactivex.Completable create(io.reactivex.CompletableOnSubscribe);
     public static io.reactivex.Completable error(java.lang.Throwable);
     public static io.reactivex.Completable merge(java.lang.Iterable);
@@ -96,10 +97,14 @@
     public io.reactivex.Maybe flatMapMaybe(io.reactivex.functions.Function);
     public io.reactivex.Observable flatMapObservable(io.reactivex.functions.Function);
 
+    public io.reactivex.Single delaySubscription(long, java.util.concurrent.TimeUnit);
+
     public io.reactivex.Single timeout(long, java.util.concurrent.TimeUnit, io.reactivex.Scheduler);
 
     public io.reactivex.Observable toObservable();
     public io.reactivex.Completable ignoreElement();
+
+    public io.reactivex.Maybe filter(io.reactivex.functions.Predicate);
 }
 
 -keep public class io.reactivex.Maybe {
@@ -121,6 +126,8 @@
     public io.reactivex.Maybe timeout(long, java.util.concurrent.TimeUnit, io.reactivex.Scheduler);
 
     public io.reactivex.Single toSingle(java.lang.Object);
+
+    public io.reactivex.Completable flatMapCompletable(io.reactivex.functions.Function);
 }
 
 -keep public class io.reactivex.Flowable {

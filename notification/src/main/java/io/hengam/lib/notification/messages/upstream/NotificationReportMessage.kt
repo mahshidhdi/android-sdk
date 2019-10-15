@@ -17,7 +17,8 @@ class NotificationReportMessage(
         @Json(name="status") val status: Int,
         @Json(name="build_errs") val exceptions: Map<NotificationBuildStep, Int>? = null,
         @Json(name="validation_errs") val validationErrors: Map<ValidationErrors, Int>? = null,
-        @Json(name="skipped") val skippedSteps: List<NotificationBuildStep>? = null
+        @Json(name="skipped") val skippedSteps: List<NotificationBuildStep>? = null,
+        @Json(name="publish_id") val publishId: String
 ) : TypedUpstreamMessage<NotificationReportMessage>(
         MessageType.Notification.Upstream.NOTIFICATION_REPORT,
         { NotificationReportMessageJsonAdapter(it) },

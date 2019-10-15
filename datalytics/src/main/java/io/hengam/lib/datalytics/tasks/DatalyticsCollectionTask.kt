@@ -1,18 +1,16 @@
 package io.hengam.lib.datalytics.tasks
 
-import android.content.Context
-import androidx.work.WorkerParameters
+import androidx.work.Data
+import androidx.work.ListenableWorker
 import io.hengam.lib.Hengam
-import io.hengam.lib.internal.HengamInternals
-import io.hengam.lib.datalytics.*
-import io.hengam.lib.datalytics.collectors.CollectionRetryRequiredError
-import io.hengam.lib.datalytics.LogTags.T_DATALYTICS
+import io.hengam.lib.datalytics.Collectable
+import io.hengam.lib.datalytics.CollectorExecutor
 import io.hengam.lib.datalytics.dagger.DatalyticsComponent
+import io.hengam.lib.datalytics.getCollectableSettings
 import io.hengam.lib.internal.ComponentNotAvailableException
 import io.hengam.lib.internal.HengamConfig
+import io.hengam.lib.internal.HengamInternals
 import io.hengam.lib.internal.task.HengamTask
-import io.hengam.lib.utils.log.LogLevel
-import io.hengam.lib.utils.log.Plog
 import io.reactivex.Single
 import javax.inject.Inject
 
@@ -21,13 +19,12 @@ import javax.inject.Inject
  * This class IS the task that gets started and scheduled.
  * It gets the collectableId and makes a task for it... Starts the task and so on.
  */
-class DatalyticsCollectionTask(context: Context, workerParameters: WorkerParameters)
-    : HengamTask("data_collection", context, workerParameters) {
+class DatalyticsCollectionTask: HengamTask() {
 
     @Inject lateinit var hengamConfig: HengamConfig
     @Inject lateinit var collectorExecutor: CollectorExecutor
 
-    override fun perform(): Single<Result> {
+    override fun perform(inputData: Data): Single<ListenableWorker.Result> {
         val datalyticsComponent = HengamInternals.getComponent(DatalyticsComponent::class.java)
                 ?: throw ComponentNotAvailableException(Hengam.DATALYTICS)
 
@@ -41,20 +38,8 @@ class DatalyticsCollectionTask(context: Context, workerParameters: WorkerParamet
 
         val collectableSettings = hengamConfig.getCollectableSettings(collectable)
 
-        return collectorExecutor.collectAndSend(collectable, collectableSettings.sendPriority, finalAttempt = isFinalAttempt)
-                .toSingleDefault(Result.success())
-                .onErrorReturn { ex ->
-                    if (ex is CollectionRetryRequiredError) {
-                        Plog.warn.message("Data collection failed for $collectableId, scheduling retry attempt")
-                                .withError(ex)
-                                .withTag(T_DATALYTICS)
-                                .useLogCatLevel(LogLevel.DEBUG)
-                                .log()
-                        Result.retry()
-                    } else {
-                        throw ex
-                    }
-                }
+        return collectorExecutor.collectAndSend(collectable, collectableSettings.sendPriority)
+                .toSingleDefault(ListenableWorker.Result.success())
     }
 
     class DatalyticsCollectionTaskException(message: String, cause: Throwable? = null) : Exception(message, cause)

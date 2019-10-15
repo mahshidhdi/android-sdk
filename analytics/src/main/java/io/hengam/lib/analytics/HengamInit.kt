@@ -35,14 +35,14 @@ class AnalyticsInitializer : HengamComponentInitializer() {
         HengamInternals.registerComponent(Hengam.ANALYTICS, AnalyticsComponent::class.java, analyticsComponent)
         HengamInternals.registerApi(Hengam.ANALYTICS, HengamAnalytics::class.java, analyticsComponent.api())
 
-        analyticsComponent.appLifeCycleListener().registerEndSessionListener()
-
         ((analyticsComponent.context().applicationContext) as Application)
-            .registerActivityLifecycleCallbacks(analyticsComponent.appLifeCycleListener())
+            .registerActivityLifecycleCallbacks(analyticsComponent.appLifeCycleNotifier())
 
     }
 
     override fun postInitialize(context: Context) {
         analyticsComponent.goalProcessManager().initialize()
+        analyticsComponent.sessionFlowManager().initializeSessionFlow()
+        analyticsComponent.sessionFlowManager().registerEndSessionListener()
     }
 }

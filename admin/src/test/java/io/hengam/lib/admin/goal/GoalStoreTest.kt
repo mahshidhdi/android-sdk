@@ -15,8 +15,9 @@ import io.hengam.lib.analytics.ViewExtractor
 import io.hengam.lib.analytics.goal.*
 import io.hengam.lib.internal.HengamMoshi
 import io.hengam.lib.utils.HengamStorage
+import io.hengam.lib.utils.rx.justDo
+import io.hengam.lib.utils.test.TestUtils
 import io.hengam.lib.utils.test.mocks.MockSharedPreference
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.spyk
@@ -33,6 +34,9 @@ class GoalStoreTest {
     private val moshi = HengamMoshi()
     private val context = RuntimeEnvironment.application
     private val goalFragmentNameExtractor = GoalFragmentObfuscatedNameExtractor(mockk(relaxed = true))
+
+    private val cpuThread = TestUtils.mockCpuThread()
+
     private lateinit var simpleActivity: AppCompatActivity
     private lateinit var goalStore: GoalStore
 
@@ -69,10 +73,8 @@ class GoalStoreTest {
 
     private fun initializeDuplicateFragmentActivity() {
         duplicateFragmentActivity = Robolectric.setupActivity(DuplicateFragmentActivity::class.java)
-        outerFragment = (duplicateFragmentActivity as AppCompatActivity).supportFragmentManager
-                .findFragmentById(R.id.activityFragmentContainer)!!
-        parentFragment = (duplicateFragmentActivity as AppCompatActivity).supportFragmentManager
-                .findFragmentById(R.id.activityFragmentContainer2)!!
+        outerFragment = (duplicateFragmentActivity).supportFragmentManager.findFragmentById(R.id.activityFragmentContainer)!!
+        parentFragment = (duplicateFragmentActivity).supportFragmentManager.findFragmentById(R.id.activityFragmentContainer2)!!
 
         val sampleTextViewInActivity = duplicateFragmentActivity.findViewById<TextView>(R.id.tvSample)
         sampleTextViewInActivity.text = "this is in activity"
@@ -93,11 +95,8 @@ class GoalStoreTest {
     fun updateViewGoalsByActivity_errorsIfViewGoalTypeIsWrong() {
         initializeSimpleActivity()
 
-        every { ViewExtractor.extractView(viewGoalDataList_simpleActivity_wrongType[0], simpleActivity) } returns simpleActivity.findViewById(R.id.tvSample)
-        every { ViewExtractor.extractView(viewGoalDataList_simpleActivity_wrongType[1], simpleActivity) } returns simpleActivity.findViewById(R.id.editTextSample)
-        every { ViewExtractor.extractView(viewGoalDataList_simpleActivity_wrongType[2], simpleActivity) } returns simpleActivity.findViewById(R.id.switchSample)
-
-        goalStore.updateViewGoalValues(viewGoalDataList_simpleActivity_wrongType, simpleActivity)
+        goalStore.updateViewGoalValues(viewGoalDataList_simpleActivity_wrongType, simpleActivity).justDo()
+        cpuThread.triggerActions()
 
         assertEquals(Constants.ANALYTICS_ERROR_VIEW_GOAL, viewGoalDataList_simpleActivity_wrongType[0].currentValue)
         assertEquals("some other text", viewGoalDataList_simpleActivity_wrongType[1].currentValue)
@@ -108,11 +107,8 @@ class GoalStoreTest {
     fun updateViewGoalsByFragment_errorsIfViewGoalTypeIsWrong() {
         initializeDuplicateFragmentActivity()
 
-        every { ViewExtractor.extractView(viewGoalDataList_duplicateFragmentActivity_wrongType[0], outerFragment) } returns outerFragment.view!!.findViewById(R.id.tvSample)
-        every { ViewExtractor.extractView(viewGoalDataList_duplicateFragmentActivity_wrongType[1], outerFragment) } returns outerFragment.view!!.findViewById(R.id.tvFragment)
-        every { ViewExtractor.extractView(viewGoalDataList_duplicateFragmentActivity_wrongType[2], outerFragment) } returns duplicateFragmentActivity.findViewById(R.id.tvActivity)
-
-        goalStore.updateViewGoalValues(viewGoalDataList_duplicateFragmentActivity_wrongType, outerFragment)
+        goalStore.updateViewGoalValues(viewGoalDataList_duplicateFragmentActivity_wrongType, outerFragment).justDo()
+        cpuThread.triggerActions()
 
         assertEquals(Constants.ANALYTICS_ERROR_VIEW_GOAL, viewGoalDataList_duplicateFragmentActivity_wrongType[0].currentValue)
         assertEquals("(Duplicate Fragment)", viewGoalDataList_duplicateFragmentActivity_wrongType[1].currentValue)

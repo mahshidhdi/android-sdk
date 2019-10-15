@@ -15,8 +15,6 @@ class AwesomeInitializer : HengamComponentInitProvider() {
 
 ```
 
-The initialization class is actually an Android `ContentProvider` which you will need to [register in your manifest](#add-initializer-class-to-manifest).
-
 Module initialization is performed in two pre-initialization and post-initialization steps. You will need to override the two methods `preInitialize` and `postInitialize` in your initialization class and define the actions to perform in each step. 
 
 The SDK's initialization is performed in the following order:
@@ -56,14 +54,11 @@ val awesomeComponent = DaggerAwesomeComponent.builder()
 
 Note, since the `AwesomeComponent` has the `CoreComponent` as a dependency, it needs to be passed an instance of the `CoreComponent`. Use the `coreComponent()` method of the builder and provide it with a `CoreComponent` instance as shown above.
 
-#### 2. Extend Moshi (optional)
-If you want to use custom Moshi adapters related to your service, you could register them here to make them accessible throughout your module. As shown in the [Dagger Component](#dagger-component) section your component should contain a method which returns a `HengamMoshi` instance. Use this instance to extend Moshi as shown below:
+#### 2. Extend Moshi
+If you want to use custom Moshi adapters related to your service, you could register them here to make them accessible throughout your module. See [Json Serialization](/guide/moshi) for more details
 
 ```kotlin
-awesomeComponent.moshi().extend { moshiBuilder: Moshi.Builder ->
-    // Add custom adapters here
-    moshiBuilder.add(/* Custom Adapter */)
-}
+extendMoshi(awesomeComponent.moshi())
 ```
 
 #### 3. Start listening for messages
@@ -74,22 +69,33 @@ awesomeComponent.messageDispatcher().listenForMessages()
 ```
 
 #### 4. Register Component
-You must register the service module component you have created in this step using the `HengamInternals.registerComponent()` class. This method accepts three arguments, the component class (`AwesomeComponent::class.java`), the component instance (`awesomeComponent`) and an instance of the component initializer.
+You must register the service module component you have created in this step using the `HengamInternals.registerComponent()` class. This method accepts three arguments, the name of the component, the component class (`AwesomeComponent::class.java`) and the component instance (`awesomeComponent`). You will want to define the component name as a constant string in the `Hengam` class.
+
 
 ```kotlin
-HengamInternals.registerComponent(AwesomeComponent::class.java, awesomeComponent, this)
+HengamInternals.registerComponent(Hengam.AWESOME, AwesomeComponent::class.java, awesomeComponent)
 ```
 
-!!! info "Optional argument"
-    The third argument is actually optional, however if you do not pass in an  initializer the `postInitializer()` method of your module will not be called in the post-initialization step.
+Once the component has been registered, the component instance can be retrived from the `HengamInternals` class like this:
+
+```kotlin
+HengamInternals.getComponent(AwesomeComponent::class.java)
+```
+
+Note, the post-initialize step of your component will not be run if you do not register the component.
 
 
 #### 5. Register the Service API (optional)
-If your service module has an external API then you must register the API for it to become available to the user. Use the `HengamInternals.registerAPI()` method for registering an API class. The first argument of this method is a string which will be used identify your service module. Your service name should be defined as a `const val` in the `Hengam` class. 
+If your service module has an external API then you must register the API for it to become available to the user (see [Providing APIs for Developers](/guide/hengam-api)). 
+
+Use the `HengamInternals.registerAPI()` method for registering an API class. The method accepts three arguments: the component name, the component class and the component API class instance.
 
 ```kotlin
 HengamInternals.registerApi(Hengam.AWESOME, HengamAwesome::class.java, awesomeComponent.api())
 ```
+
+#### 6. Register Debug Commands (optional)
+TODO
 
 ### Post-Initialization
 The post-intialization step will happen after all service modules have been pre-initialized. The `postInitialize` method will be called on the [CPU thread](/guide/threads#cpu-thread). In general, any intialization steps specific to your service module which do not fit in the pre-initialization steps should be perfomed here. 
@@ -104,16 +110,16 @@ class AwesomeInitializer : HengamInitProvider() {
     lateinit var awesomeComponent: AwesomeComponent
 
     override fun preInitialize(context: Context) {
+        val core = HengamInternals.getComponent(CoreComponent::class.java)
+            ?:  throw ComponentNotAvailableException(Hengam.CORE)
+
         /* Create component instance */
         awesomeComponent = DaggerAwesomeComponent.builder()
-                .coreComponent(HengamInternals.getComponent(CoreComponent::class.java))
+                .coreComponent(core)
                 .build()
 
         /* Extend Moshi Adapters */
-        awesomeComponent.moshi().extend { moshiBuilder: Moshi.Builder ->
-            // Add custom adapters here
-            moshiBuilder.add(/* Custom Adapter */)
-        }
+        extendMoshi(awesomeComponent.moshi())
 
         /* Listen for Downstream Messages */
         awesomeComponent.messageDispatcher().listenForMessages().
@@ -123,6 +129,9 @@ class AwesomeInitializer : HengamInitProvider() {
 
         /* Register API */
         HengamInternals.registerApi(Hengam.AWESOME, HengamAwesome::class.java, awesomeComponent.api())
+
+        /* Register Debug Commands */
+        HengamInternals.registerDebugCommands(awesomeComponent.debugCommands())
     }
 
     override fun postInitialize(context: Context) { 
@@ -139,23 +148,3 @@ class AwesomeInitializer : HengamInitProvider() {
     }
 }
 ```
-
-### Add initializer class to Manifest
-The initializer class is an Android `ContentProvider` which needs to be registered in `AndroidManifest.xml` to work.
-
-Add the following `provider` to the `application` tag in your service module's `AndroidManifest.xml` file.
-
-```xml
-<provider
-    android:name=".AwesomeInitializer"
-    android:authorities="${applicationId}.hengamawesomeinitializer"
-    android:initOrder="5"
-    android:exported="false"
-    android:enabled="true" />
-```
-
-The `android.name` field must point to your initializer class. 
-
-The `android.authorities` must be a globally unique string on the user's device. To make sure the string is indeed unique, use the format `"${applicationId}.hengam<service-name>initializer"`.
-
-The `android:initOrder` should be set to `5` for all service modules. If for some reason you **prefer** your module to be initialized sooner than other modules, you could set `android:initOrder` to a higher value but it should be no higher than `9`.

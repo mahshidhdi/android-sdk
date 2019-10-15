@@ -18,6 +18,7 @@ ext {
     bintrayName = 'hengam-rxjava'
     libraryName = "HengamRxJava"
     libraryDescription = "Minified RxJava library used in Hengam modules"
+    uploadSources = true
 }
 
 
@@ -35,6 +36,10 @@ shadowJar {
 //    version = null
 //}
 
+task sourceJar(type: Jar) {
+    classifier "sources"
+}
+
 publishing {
     publications {
         shadow(MavenPublication) { publication ->
@@ -42,6 +47,8 @@ publishing {
             groupId publishedGroupId
             artifactId artifact
             version release.versionName
+
+            artifact sourceJar
 
             pom {
                 name = libraryName
@@ -69,3 +76,21 @@ ext {
 }
 
 apply from : "$rootProject.projectDir/bintray.gradle"
+
+// Use maven-publish plugin to create pom file in build/maven
+publishing {
+    publications {
+        mavenAar(MavenPublication) {
+            groupId publishedGroupId
+            artifactId artifact
+            version release.versionName
+            artifact shadowJar
+            artifact sourceJar
+        }
+    }
+    repositories {
+        maven {
+            url "$buildDir/maven"
+        }
+    }
+}

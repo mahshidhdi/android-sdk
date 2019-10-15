@@ -2,11 +2,13 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion setup.compileSdk
 
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 27
+        minSdkVersion setup.minSdk
+        targetSdkVersion setup.targetSdk
+        versionCode release.versionCode
+        versionName release.versionName
     }
 
     buildTypes {
@@ -36,6 +38,8 @@ ext {
     bintrayName = 'hengam-utils'
     libraryName = "HengamUtils"
     libraryDescription = "Hengam Plus Utils module"
+    uploadSources = true
 }
 
 apply from : "$rootProject.projectDir/bintray-android.gradle"
+apply from : "$rootProject.projectDir/publish.gradle"

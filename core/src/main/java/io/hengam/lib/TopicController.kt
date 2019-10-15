@@ -8,8 +8,7 @@ import io.reactivex.Completable
 import javax.inject.Inject
 
 class TopicController @Inject constructor(
-    private val topicManager: TopicManager,
-    private val appManifest: AppManifest
+    private val topicManager: TopicManager
 ) {
     fun handleUpdateTopicMessage(message: UpdateTopicSubscriptionMessage) {
         Plog.debug(
@@ -20,19 +19,11 @@ class TopicController @Inject constructor(
 
         Completable.merge(listOf(
             Completable.merge(message.subscribeTo
-                .map { ApiPatch.removeTopicNamePrefix(it) }
-                .map { removeAppIdSuffix(it) }
-                .map { topicManager.subscribe(it) }
+                .map { topicManager.subscribe(it, addSuffix = false) }
             ),
             Completable.merge(message.unsubscribeFrom
-                .map { ApiPatch.removeTopicNamePrefix(it) }
-                .map { removeAppIdSuffix(it) }
-                .map { topicManager.unsubscribe(it) }
+                .map { topicManager.unsubscribe(it, addSuffix = false) }
             )
         )).justDo(T_TOPIC)
-    }
-
-    private fun removeAppIdSuffix(topicFullName: String): String {
-        return topicFullName.removeSuffix("_" + appManifest.appId)
     }
 }
